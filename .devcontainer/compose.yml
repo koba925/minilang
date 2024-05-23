@@ -1,0 +1,8 @@
+services:
+  minilang:
+    build: ./python3
+    stdin_open: true
+    tty: true
+    working_dir: /workspaces/minilang
+    volumes:
+      - ..:/workspaces/minilang
