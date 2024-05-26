@@ -34,5 +34,6 @@ class Interpreter:
             return "$EOF"
 
 if __name__ == "__main__":
-    while src := input(": "):
+    while src := "\n".join(iter(lambda: input(": "), "")):
         Interpreter(src).interpret()
+
