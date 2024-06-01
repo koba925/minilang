@@ -27,27 +27,42 @@ class Scanner:
         else:
             return "$EOF"
 
-class Interpreter:
+class Parser:
     def __init__(self, source):
         self.scanner = Scanner(source)
+        self.current_token = ""
 
-    def interpret(self):
-        command = self.scanner.next_token()
+    def parse(self):
+        command = self._next_token()
         assert command == "print", f"`print` expected, found `{command}`."
 
-        number = self.scanner.next_token()
+        number = self._next_token()
         assert isinstance(number, int), f"Number expected, found `{number}`."
 
-        semicolon = self.scanner.next_token()
-        assert semicolon == ";", f"Semicolon expected, found `{semicolon}`."
+        self._next_token()
+        self._consume(";")
 
-        eof = self.scanner.next_token()
-        assert eof == "$EOF", f"EOF expected, found `{eof}`."
+        self._consume("$EOF")
 
+        return ["print", number]
 
-        print(number)
+    def _consume(self, expected_token):
+        assert self.current_token == expected_token, \
+               f"Expected `{expected_token}`, found `{self.current_token}`."
+        self._next_token()
+
+    def _next_token(self):
+        self.current_token = self.scanner.next_token()
+        return self.current_token
+
+class Evaluator:
+    def evaluate(self, ast):
+        match ast:
+            case ["print", val]: print(val)
+            case _: assert False, "Internal Error."
 
 if __name__ == "__main__":
+    evaluator = Evaluator()
     while source := "\n".join(iter(lambda: input(": "), "")):
-        try: Interpreter(source).interpret()
+        try: evaluator.evaluate(Parser(source).parse())
         except AssertionError as e: print(e)
