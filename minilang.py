@@ -8,22 +8,22 @@ class Interpreter:
         start = self._current_position
         while  self._current_char().isalpha(): self._current_position += 1
         command = self._source[start:self._current_position]
-        assert command == "print"
+        assert command == "print", f"`print` expected."
 
         while self._current_char().isspace(): self._current_position += 1
         start = self._current_position
         while  self._current_char().isnumeric():
             self._current_position += 1
-        assert self._source[start:self._current_position].isnumeric()
+        assert self._source[start:self._current_position].isnumeric(), f"Number expected."
         number = int(self._source[start:self._current_position])
 
         while self._current_char().isspace(): self._current_position += 1
         start = self._current_position
         self._current_position += 1
-        assert self._source[start:self._current_position] == ";"
+        assert self._source[start:self._current_position] == ";", f"Semicolon expected."
 
         while self._current_char().isspace(): self._current_position += 1
-        assert self._current_char() == "$EOF"
+        assert self._current_char() == "$EOF", f"EOF expected."
 
         print(number)
 
@@ -34,6 +34,6 @@ class Interpreter:
             return "$EOF"
 
 if __name__ == "__main__":
-    while src := "\n".join(iter(lambda: input(": "), "")):
-        Interpreter(src).interpret()
-
+    while source := "\n".join(iter(lambda: input(": "), "")):
+        try: Interpreter(source).interpret()
+        except AssertionError as e: print(e)
