@@ -48,7 +48,6 @@ class Interpreter:
         print(number)
 
 if __name__ == "__main__":
-    while src := "\n".join(iter(lambda: input(": "), "")):
-        try:
-            Interpreter(src).interpret()
+    while source := "\n".join(iter(lambda: input(": "), "")):
+        try: Interpreter(source).interpret()
         except AssertionError as e: print(e)
