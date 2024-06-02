@@ -36,18 +36,28 @@ class Parser:
     def parse(self):
         block: list = ["block"]
         while self.current_token != "$EOF":
-            block.append(self._print())
+            block.append(self._statement())
+        return block
+
+    def _statement(self):
+        match self.current_token:
+            case "{": return self._block()
+            case "print": return self._print()
+            case token: assert False, f"Unexpected token `{token}`."
+
+    def _block(self):
+        block: list = ["block"]
+        self._next_token()
+        while self.current_token != "}":
+            block.append(self._statement())
+        self._next_token()
         return block
 
     def _print(self):
-        assert self.current_token == "print", f"`print` expected, found `{self.current_token}`."
-
         number = self._next_token()
         assert isinstance(number, int), f"Number expected, found `{number}`."
-
         self._next_token()
         self._consume(";")
-
         return ["print", number]
 
     def _consume(self, expected_token):
