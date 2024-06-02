@@ -31,5 +31,13 @@ class TestMinilang(unittest.TestCase):
                          ["block", ["print", 1], ["block", ["print", 2], ["print", 3]], ["print", 4]])
         self.assertEqual(get_output("print 1; { print 2; print 3; } print 4;"), [1, 2, 3, 4])
 
+    def test_if(self):
+        self.assertEqual(get_output("if 1 { print 2; }"), [2])
+        self.assertEqual(get_output("if 0 { print 2; }"), [])
+        self.assertEqual(get_output("if 1 { if 1 { print 2; } }"), [2])
+        self.assertEqual(get_output("if 1 { if 0 { print 2; } }"), [])
+        self.assertEqual(get_error("if a { print 2; }"), "Number expected, found `a`.")
+        self.assertEqual(get_error("if 1 print 2;"), "Expected `{`, found `print`.")
+
 if __name__ == "__main__":
     unittest.main()

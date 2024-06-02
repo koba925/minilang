@@ -42,6 +42,7 @@ class Parser:
     def _statement(self):
         match self.current_token:
             case "{": return self._block()
+            case "if": return self._if()
             case "print": return self._print()
             case token: assert False, f"Unexpected token `{token}`."
 
@@ -53,6 +54,14 @@ class Parser:
         self._next_token()
         return block
 
+    def _if(self):
+        condtion = self._next_token()
+        assert isinstance(condtion, int), f"Number expected, found `{condtion}`."
+        self._next_token()
+        self._check("{")
+        consequence = self._block()
+        return ["if", condtion, consequence]
+
     def _print(self):
         number = self._next_token()
         assert isinstance(number, int), f"Number expected, found `{number}`."
@@ -60,9 +69,12 @@ class Parser:
         self._consume(";")
         return ["print", number]
 
-    def _consume(self, expected_token):
+    def _check(self, expected_token):
         assert self.current_token == expected_token, \
                f"Expected `{expected_token}`, found `{self.current_token}`."
+
+    def _consume(self, expected_token):
+        self._check(expected_token)
         self._next_token()
 
     def _next_token(self):
@@ -79,12 +91,16 @@ class Evaluator:
     def evaluate(self, ast):
         match ast:
             case ["block", *statements]: self._block(statements)
+            case ["if", condition, consequence]: self._if(condition, consequence)
             case ["print", val]: self._output.append(val)
             case _: assert False, "Internal Error."
 
     def _block(self, statements):
         for statement in statements:
             self.evaluate(statement)
+
+    def _if(self, condition, consequence):
+        if condition != 0: self.evaluate(consequence)
 
 if __name__ == "__main__":
     evaluator = Evaluator()
