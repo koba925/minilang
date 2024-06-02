@@ -56,13 +56,22 @@ class Parser:
         return self.current_token
 
 class Evaluator:
+    def __init__(self):
+        self._output = []
+
+    def clear_output(self): self._output = []
+    def output(self): return self._output
+
     def evaluate(self, ast):
         match ast:
-            case ["print", val]: print(val)
+            case ["print", val]: self._output.append(val)
             case _: assert False, "Internal Error."
 
 if __name__ == "__main__":
     evaluator = Evaluator()
     while source := "\n".join(iter(lambda: input(": "), "")):
-        try: evaluator.evaluate(Parser(source).parse())
+        try:
+            evaluator.clear_output()
+            evaluator.evaluate(Parser(source).parse())
+            print(*evaluator.output(), sep="\n")
         except AssertionError as e: print(e)
