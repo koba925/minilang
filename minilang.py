@@ -30,17 +30,17 @@ class Scanner:
 class Parser:
     def __init__(self, source):
         self.scanner = Scanner(source)
-        self.current_token = ""
+        self._current_token = ""
         self._next_token()
 
     def parse(self):
         block: list = ["block"]
-        while self.current_token != "$EOF":
+        while self._current_token != "$EOF":
             block.append(self._statement())
         return block
 
     def _statement(self):
-        match self.current_token:
+        match self._current_token:
             case "{": return self._block()
             case "if": return self._if()
             case "print": return self._print()
@@ -49,7 +49,7 @@ class Parser:
     def _block(self):
         block: list = ["block"]
         self._next_token()
-        while self.current_token != "}":
+        while self._current_token != "}":
             block.append(self._statement())
         self._next_token()
         return block
@@ -60,7 +60,12 @@ class Parser:
         self._next_token()
         self._check("{")
         consequence = self._block()
-        return ["if", condtion, consequence]
+        alternative = ["block"]
+        if self._current_token == "else":
+            self._next_token()
+            self._check("{")
+            alternative = self._block()
+        return ["if", condtion, consequence, alternative]
 
     def _print(self):
         number = self._next_token()
@@ -70,16 +75,16 @@ class Parser:
         return ["print", number]
 
     def _check(self, expected_token):
-        assert self.current_token == expected_token, \
-               f"Expected `{expected_token}`, found `{self.current_token}`."
+        assert self._current_token == expected_token, \
+               f"Expected `{expected_token}`, found `{self._current_token}`."
 
     def _consume(self, expected_token):
         self._check(expected_token)
         self._next_token()
 
     def _next_token(self):
-        self.current_token = self.scanner.next_token()
-        return self.current_token
+        self._current_token = self.scanner.next_token()
+        return self._current_token
 
 class Evaluator:
     def __init__(self):
@@ -91,7 +96,8 @@ class Evaluator:
     def evaluate(self, ast):
         match ast:
             case ["block", *statements]: self._block(statements)
-            case ["if", condition, consequence]: self._if(condition, consequence)
+            case ["if", condition, consequence, alternative]:
+                self._if(condition, consequence, alternative)
             case ["print", val]: self._output.append(val)
             case _: assert False, "Internal Error."
 
@@ -99,8 +105,11 @@ class Evaluator:
         for statement in statements:
             self.evaluate(statement)
 
-    def _if(self, condition, consequence):
-        if condition != 0: self.evaluate(consequence)
+    def _if(self, condition, consequence, alternative):
+        if condition != 0:
+            self.evaluate(consequence)
+        else:
+            self.evaluate(alternative)
 
 if __name__ == "__main__":
     evaluator = Evaluator()
