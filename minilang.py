@@ -44,7 +44,7 @@ class Parser:
             case "{": return self._block()
             case "if": return self._if()
             case "print": return self._print()
-            case token: assert False, f"Unexpected token `{token}`."
+            case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
     def _block(self):
         block: list = ["block"]
@@ -73,10 +73,14 @@ class Parser:
         return ["print", expression]
 
     def _expression(self):
-        value = self._current_token
-        assert isinstance(value, int), f"Number expected, found `{value}`."
-        self._next_token()
-        return value
+        return self._primary()
+
+    def _primary(self):
+        match self._current_token:
+            case int(value):
+                self._next_token()
+                return value
+            case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
     def _check(self, expected_token):
         assert self._current_token == expected_token, \

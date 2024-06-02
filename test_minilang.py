@@ -17,7 +17,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1;"), [1])
         self.assertEqual(get_output("  print\n  12  ;\n  "), [12])
         self.assertEqual(get_error("prin 1;"), "Unexpected token `prin`.")
-        self.assertEqual(get_error("print a;"), "Number expected, found `a`.")
+        self.assertEqual(get_error("print a;"), "Unexpected token `a`.")
         self.assertEqual(get_error("print 1:"), "Expected `;`, found `:`.")
         self.assertEqual(get_error("print 1"), "Expected `;`, found `$EOF`.")
 
@@ -36,7 +36,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("if 0 { print 2; }"), [])
         self.assertEqual(get_output("if 1 { if 1 { print 2; } }"), [2])
         self.assertEqual(get_output("if 1 { if 0 { print 2; } }"), [])
-        self.assertEqual(get_error("if a { print 2; }"), "Number expected, found `a`.")
+        self.assertEqual(get_error("if a { print 2; }"), "Unexpected token `a`.")
         self.assertEqual(get_error("if 1 print 2;"), "Expected `{`, found `print`.")
 
     def test_else(self):
