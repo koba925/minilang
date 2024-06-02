@@ -20,7 +20,11 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("print a;"), "Number expected, found `a`.")
         self.assertEqual(get_error("print 1:"), "Expected `;`, found `:`.")
         self.assertEqual(get_error("print 1"), "Expected `;`, found `$EOF`.")
-        self.assertEqual(get_error("print 1;a"), "Expected `$EOF`, found `a`.")
+
+    def test_statements(self):
+        self.assertEqual(get_output(""), [])
+        self.assertEqual(get_output("print 1; print 2;"), [1, 2])
+        self.assertEqual(get_error("print 1; prin"), "`print` expected, found `prin`.")
 
 if __name__ == '__main__':
     unittest.main()

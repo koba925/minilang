@@ -31,18 +31,22 @@ class Parser:
     def __init__(self, source):
         self.scanner = Scanner(source)
         self.current_token = ""
+        self._next_token()
 
     def parse(self):
-        command = self._next_token()
-        assert command == "print", f"`print` expected, found `{command}`."
+        block: list = ["block"]
+        while self.current_token != "$EOF":
+            block.append(self._print())
+        return block
+
+    def _print(self):
+        assert self.current_token == "print", f"`print` expected, found `{self.current_token}`."
 
         number = self._next_token()
         assert isinstance(number, int), f"Number expected, found `{number}`."
 
         self._next_token()
         self._consume(";")
-
-        self._consume("$EOF")
 
         return ["print", number]
 
@@ -64,8 +68,13 @@ class Evaluator:
 
     def evaluate(self, ast):
         match ast:
+            case ["block", *statements]: self._block(statements)
             case ["print", val]: self._output.append(val)
             case _: assert False, "Internal Error."
+
+    def _block(self, statements):
+        for statement in statements:
+            self.evaluate(statement)
 
 if __name__ == "__main__":
     evaluator = Evaluator()
