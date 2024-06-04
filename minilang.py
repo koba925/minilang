@@ -73,9 +73,16 @@ class Parser:
         return ["print", expression]
 
     def _expression(self):
-        return self._factor()
+        return self._add_sub()
 
-    def _factor(self):
+    def _add_sub(self):
+        term = self._mult_div()
+        while (op := self._current_token) in ("+", "-"):
+            self._next_token()
+            term = [op, term, self._mult_div()]
+        return term
+
+    def _mult_div(self):
         term = self._primary()
         while (op := self._current_token) in ("*", "/"):
             self._next_token()
@@ -132,6 +139,8 @@ class Evaluator:
     def _expression(self, expression):
         match expression:
             case int(value): return value
+            case ["+", a, b]: return self._expression(a) + self._expression(b)
+            case ["-", a, b]: return self._expression(a) - self._expression(b)
             case ["*", a, b]: return self._expression(a) * self._expression(b)
             case ["/", a, b]: return self._expression(a) // self._expression(b)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
