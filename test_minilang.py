@@ -31,6 +31,12 @@ class TestMinilang(unittest.TestCase):
                          ["block", ["print", 1], ["block", ["print", 2], ["print", 3]], ["print", 4]])
         self.assertEqual(get_output("print 1; { print 2; print 3; } print 4;"), [1, 2, 3, 4])
 
+    def test_factor(self):
+        self.assertEqual(get_output("print 2 * 3;"), [6])
+        self.assertEqual(get_output("print 2 * 3 * 4;"), [24])
+        self.assertEqual(get_output("print 24 / 2;"), [12])
+        self.assertEqual(get_output("print 24 / 4 / 2;"), [3])
+
     def test_if(self):
         self.assertEqual(get_output("if 1 { print 2; }"), [2])
         self.assertEqual(get_output("if 0 { print 2; }"), [])

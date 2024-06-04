@@ -73,7 +73,14 @@ class Parser:
         return ["print", expression]
 
     def _expression(self):
-        return self._primary()
+        return self._factor()
+
+    def _factor(self):
+        term = self._primary()
+        while (op := self._current_token) in ("*", "/"):
+            self._next_token()
+            term = [op, term, self._primary()]
+        return term
 
     def _primary(self):
         match self._current_token:
@@ -107,7 +114,7 @@ class Evaluator:
             case ["if", condition, consequence, alternative]:
                 self._if(condition, consequence, alternative)
             case ["print", expression]: self._print(expression)
-            case _: assert False, "Internal Error."
+            case unexpected: assert False, f"Internal Error at `{unexpected}`"
 
     def _block(self, statements):
         for statement in statements:
@@ -123,8 +130,11 @@ class Evaluator:
         self._output.append(self._expression(expression))
 
     def _expression(self, expression):
-        assert isinstance(expression, int), "Internal Error."
-        return expression
+        match expression:
+            case int(value): return value
+            case ["*", a, b]: return self._expression(a) * self._expression(b)
+            case ["/", a, b]: return self._expression(a) // self._expression(b)
+            case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
 if __name__ == "__main__":
     evaluator = Evaluator()
