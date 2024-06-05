@@ -59,6 +59,10 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1 = 2 = 2;"), [0])
         self.assertEqual(get_output("print 1 + 2 = 6 - 3;"), [1])
 
+    def test_grouping(self):
+        self.assertEqual(get_output("print (2 + 3) * 4;"), [20])
+        self.assertEqual(get_output("print 2 * (3 + 4);"), [14])
+
     def test_if(self):
         self.assertEqual(get_output("if 1 { print 2; }"), [2])
         self.assertEqual(get_output("if 0 { print 2; }"), [])

@@ -107,6 +107,11 @@ class Parser:
             case int(value):
                 self._next_token()
                 return value
+            case "(":
+                self._next_token()
+                exp = self._parse_expression()
+                self._consume_token(")")
+                return exp
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
     def _check_token(self, expected_token):
