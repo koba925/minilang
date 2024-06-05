@@ -73,7 +73,14 @@ class Parser:
         return ["print", expression]
 
     def _parse_expression(self):
-        return self._parse_add_sub()
+        return self._parse_equality()
+
+    def _parse_equality(self):
+        equality = self._parse_add_sub()
+        while (op := self._current_token) in ("=", "#"):
+            self._next_token()
+            equality = [op, equality, self._parse_add_sub()]
+        return equality
 
     def _parse_add_sub(self):
         add_sub = self._parse_mult_div()
@@ -145,6 +152,8 @@ class Evaluator:
     def _eval_exp(self, expression):
         match expression:
             case int(value): return value
+            case ["=", a, b]: return 1 if self._eval_exp(a) == self._eval_exp(b) else 0
+            case ["#", a, b]: return 1 if self._eval_exp(a) != self._eval_exp(b) else 0
             case ["+", a, b]: return self._eval_exp(a) + self._eval_exp(b)
             case ["-", a, b]: return self._eval_exp(a) - self._eval_exp(b)
             case ["*", a, b]: return self._eval_exp(a) * self._eval_exp(b)
