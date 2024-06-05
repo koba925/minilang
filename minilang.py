@@ -33,81 +33,81 @@ class Parser:
         self._current_token = ""
         self._next_token()
 
-    def parse(self):
+    def parse_program(self):
         block: list = ["block"]
         while self._current_token != "$EOF":
-            block.append(self._statement())
+            block.append(self._parse_statement())
         return block
 
-    def _statement(self):
+    def _parse_statement(self):
         match self._current_token:
-            case "{": return self._block()
-            case "if": return self._if()
-            case "print": return self._print()
+            case "{": return self._parse_block()
+            case "if": return self._parse_if()
+            case "print": return self._parse_print()
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
-    def _block(self):
+    def _parse_block(self):
         block: list = ["block"]
         self._next_token()
         while self._current_token != "}":
-            block.append(self._statement())
+            block.append(self._parse_statement())
         self._next_token()
         return block
 
-    def _if(self):
+    def _parse_if(self):
         self._next_token()
-        condtion = self._expression()
-        self._check("{")
-        consequence = self._block()
+        condtion = self._parse_expression()
+        self._check_token("{")
+        consequence = self._parse_block()
         alternative = ["block"]
         if self._current_token == "else":
             self._next_token()
-            self._check("{")
-            alternative = self._block()
+            self._check_token("{")
+            alternative = self._parse_block()
         return ["if", condtion, consequence, alternative]
 
-    def _print(self):
+    def _parse_print(self):
         self._next_token()
-        expression = self._expression()
-        self._consume(";")
+        expression = self._parse_expression()
+        self._consume_token(";")
         return ["print", expression]
 
-    def _expression(self):
-        return self._add_sub()
+    def _parse_expression(self):
+        return self._parse_add_sub()
 
-    def _add_sub(self):
-        add_sub = self._mult_div()
+    def _parse_add_sub(self):
+        add_sub = self._parse_mult_div()
         while (op := self._current_token) in ("+", "-"):
             self._next_token()
-            add_sub = [op, add_sub, self._mult_div()]
+            add_sub = [op, add_sub, self._parse_mult_div()]
         return add_sub
 
-    def _mult_div(self):
-        mult_div = self._exp()
+    def _parse_mult_div(self):
+        mult_div = self._parse_power()
         while (op := self._current_token) in ("*", "/"):
             self._next_token()
-            mult_div = [op, mult_div, self._exp()]
+            mult_div = [op, mult_div, self._parse_power()]
         return mult_div
 
-    def _exp(self):
-        exp = self._primary()
+    def _parse_power(self):
+        exp = self._parse_primary()
         if self._current_token != "^": return exp
         self._next_token()
-        return ["^", exp, self._exp()]
+        return ["^", exp, self._parse_power()]
 
-    def _primary(self):
+    def _parse_primary(self):
         match self._current_token:
             case int(value):
                 self._next_token()
                 return value
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
-    def _check(self, expected_token):
+    def _check_token(self, expected_token):
         assert self._current_token == expected_token, \
                f"Expected `{expected_token}`, found `{self._current_token}`."
 
-    def _consume(self, expected_token):
-        self._check(expected_token)
+    def _consume_token(self, expected_token):
+        self._check_token(expected_token)
         self._next_token()
 
     def _next_token(self):
@@ -121,35 +121,35 @@ class Evaluator:
     def clear_output(self): self._output = []
     def output(self): return self._output
 
-    def evaluate(self, ast):
-        match ast:
-            case ["block", *statements]: self._block(statements)
+    def eval_statement(self, statement):
+        match statement:
+            case ["block", *statements]: self._eval_block(statements)
             case ["if", condition, consequence, alternative]:
-                self._if(condition, consequence, alternative)
-            case ["print", expression]: self._print(expression)
+                self._eval_if(condition, consequence, alternative)
+            case ["print", expression]: self._eval_print(expression)
             case unexpected: assert False, f"Internal Error at `{unexpected}`"
 
-    def _block(self, statements):
+    def _eval_block(self, statements):
         for statement in statements:
-            self.evaluate(statement)
+            self.eval_statement(statement)
 
-    def _if(self, condition, consequence, alternative):
+    def _eval_if(self, condition, consequence, alternative):
         if condition != 0:
-            self.evaluate(consequence)
+            self.eval_statement(consequence)
         else:
-            self.evaluate(alternative)
+            self.eval_statement(alternative)
 
-    def _print(self, expression):
-        self._output.append(self._expression(expression))
+    def _eval_print(self, expression):
+        self._output.append(self._eval_exp(expression))
 
-    def _expression(self, expression):
+    def _eval_exp(self, expression):
         match expression:
             case int(value): return value
-            case ["+", a, b]: return self._expression(a) + self._expression(b)
-            case ["-", a, b]: return self._expression(a) - self._expression(b)
-            case ["*", a, b]: return self._expression(a) * self._expression(b)
-            case ["/", a, b]: return self._expression(a) // self._expression(b)
-            case ["^", a, b]: return self._expression(a) ** self._expression(b)
+            case ["+", a, b]: return self._eval_exp(a) + self._eval_exp(b)
+            case ["-", a, b]: return self._eval_exp(a) - self._eval_exp(b)
+            case ["*", a, b]: return self._eval_exp(a) * self._eval_exp(b)
+            case ["/", a, b]: return self._eval_exp(a) // self._eval_exp(b)
+            case ["^", a, b]: return self._eval_exp(a) ** self._eval_exp(b)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
 if __name__ == "__main__":
@@ -157,6 +157,6 @@ if __name__ == "__main__":
     while source := "\n".join(iter(lambda: input(": "), "")):
         try:
             evaluator.clear_output()
-            evaluator.evaluate(Parser(source).parse())
+            evaluator.eval_statement(Parser(source).parse_program())
             print(*evaluator.output(), sep="\n")
         except AssertionError as e: print(e)

@@ -4,7 +4,7 @@ from minilang import Parser, Evaluator
 
 def get_output(source):
     evaluator = Evaluator()
-    evaluator.evaluate(Parser(source).parse())
+    evaluator.eval_statement(Parser(source).parse_program())
     return evaluator.output()
 
 def get_error(source):
@@ -27,7 +27,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("print 1; prin"), "Unexpected token `prin`.")
 
     def test_block(self):
-        self.assertEqual(Parser("print 1; { print 2; print 3; } print 4;").parse(),
+        self.assertEqual(Parser("print 1; { print 2; print 3; } print 4;").parse_program(),
                          ["block", ["print", 1], ["block", ["print", 2], ["print", 3]], ["print", 4]])
         self.assertEqual(get_output("print 1; { print 2; print 3; } print 4;"), [1, 2, 3, 4])
 
