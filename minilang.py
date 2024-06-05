@@ -76,18 +76,24 @@ class Parser:
         return self._add_sub()
 
     def _add_sub(self):
-        term = self._mult_div()
+        add_sub = self._mult_div()
         while (op := self._current_token) in ("+", "-"):
             self._next_token()
-            term = [op, term, self._mult_div()]
-        return term
+            add_sub = [op, add_sub, self._mult_div()]
+        return add_sub
 
     def _mult_div(self):
-        term = self._primary()
+        mult_div = self._exp()
         while (op := self._current_token) in ("*", "/"):
             self._next_token()
-            term = [op, term, self._primary()]
-        return term
+            mult_div = [op, mult_div, self._exp()]
+        return mult_div
+
+    def _exp(self):
+        exp = self._primary()
+        if self._current_token != "^": return exp
+        self._next_token()
+        return ["^", exp, self._exp()]
 
     def _primary(self):
         match self._current_token:
@@ -143,6 +149,7 @@ class Evaluator:
             case ["-", a, b]: return self._expression(a) - self._expression(b)
             case ["*", a, b]: return self._expression(a) * self._expression(b)
             case ["/", a, b]: return self._expression(a) // self._expression(b)
+            case ["^", a, b]: return self._expression(a) ** self._expression(b)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
 if __name__ == "__main__":

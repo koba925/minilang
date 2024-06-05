@@ -31,11 +31,17 @@ class TestMinilang(unittest.TestCase):
                          ["block", ["print", 1], ["block", ["print", 2], ["print", 3]], ["print", 4]])
         self.assertEqual(get_output("print 1; { print 2; print 3; } print 4;"), [1, 2, 3, 4])
 
+    def test_power(self):
+        self.assertEqual(get_output("print 2 ^ 3;"), [8])
+        self.assertEqual(get_output("print 2 ^ 2 ^ 3;"), [256])
+
     def test_factor(self):
         self.assertEqual(get_output("print 2 * 3;"), [6])
         self.assertEqual(get_output("print 2 * 3 * 4;"), [24])
         self.assertEqual(get_output("print 24 / 2;"), [12])
         self.assertEqual(get_output("print 24 / 4 / 2;"), [3])
+        self.assertEqual(get_output("print 2 ^ 3 * 2;"), [16])
+        self.assertEqual(get_output("print 2 * 2 ^ 3;"), [16])
 
     def test_term(self):
         self.assertEqual(get_output("print 2 + 3;"), [5])
