@@ -146,7 +146,7 @@ class Evaluator:
             self.eval_statement(statement)
 
     def _eval_if(self, condition, consequence, alternative):
-        if condition != 0:
+        if self._eval_exp(condition) != 0:
             self.eval_statement(consequence)
         else:
             self.eval_statement(alternative)

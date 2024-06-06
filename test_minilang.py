@@ -79,6 +79,8 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_ast("if 1 { print 2; }"), ["block", ["if", 1, ["block", ["print", 2]], ["block"]]])
         self.assertEqual(get_output("if 1 { print 2; }"), [2])
         self.assertEqual(get_output("if 0 { print 2; }"), [])
+        self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; }"), [1])
+        self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; }"), [])
         self.assertEqual(get_output("if 1 { if 1 { print 2; } }"), [2])
         self.assertEqual(get_output("if 1 { if 0 { print 2; } }"), [])
         self.assertEqual(get_error("if a { print 2; }"), "Unexpected token `a`.")
@@ -89,6 +91,8 @@ class TestMinilang(unittest.TestCase):
                          ["block", ["if", 1, ["block", ["print", 2]], ["block", ["print", 3]]]])
         self.assertEqual(get_output("if 1 { print 2; } else { print 3; }"), [2])
         self.assertEqual(get_output("if 0 { print 2; } else { print 3; }"), [3])
+        self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; } else { print 2; }"), [1])
+        self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; } else { print 2; }"), [2])
         self.assertEqual(get_error("if 1 { print 2; } else print 3;"), "Expected `{`, found `print`.")
 
 if __name__ == "__main__":
