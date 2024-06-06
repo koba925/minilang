@@ -170,7 +170,9 @@ if __name__ == "__main__":
     evaluator = Evaluator()
     while source := "\n".join(iter(lambda: input(": "), "")):
         try:
+            ast = Parser(source).parse_program()
+            print(ast)
             evaluator.clear_output()
-            evaluator.eval_statement(Parser(source).parse_program())
+            evaluator.eval_statement(ast)
             print(*evaluator.output(), sep="\n")
         except AssertionError as e: print(e)
