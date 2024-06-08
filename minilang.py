@@ -34,10 +34,10 @@ class Parser:
         self._next_token()
 
     def parse_program(self):
-        block: list = ["block"]
+        program: list = ["program"]
         while self._current_token != "$EOF":
-            block.append(self._parse_statement())
-        return block
+            program.append(self._parse_statement())
+        return program
 
     def _parse_statement(self):
         match self._current_token:
@@ -209,6 +209,7 @@ class Evaluator:
 
     def eval_statement(self, statement):
         match statement:
+            case ["program", *statements]: self._eval_program(statements)
             case ["block", *statements]: self._eval_block(statements)
             case ["var", name, value]: self._eval_var(name, value)
             case ["set", name, value]: self._eval_set(name, value)
@@ -218,6 +219,10 @@ class Evaluator:
             case ["print", expr]: self._eval_print(expr)
             case ["expr", expr]: self._eval_expr(expr)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
+
+    def _eval_program(self, statements):
+        for statement in statements:
+            self.eval_statement(statement)
 
     def _eval_block(self, statements):
         parent_env = self._env

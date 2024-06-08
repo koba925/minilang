@@ -31,34 +31,34 @@ class TestMinilang(unittest.TestCase):
 
     def test_block(self):
         self.assertEqual(get_ast("print 1; { print 2; print 3; } print 4;"),
-                         ["block", ["print", 1], ["block", ["print", 2], ["print", 3]], ["print", 4]])
+                         ["program", ["print", 1], ["block", ["print", 2], ["print", 3]], ["print", 4]])
         self.assertEqual(get_output("print 1; { print 2; print 3; } print 4;"), [1, 2, 3, 4])
 
     def test_power(self):
         self.assertEqual(get_output("print 2 ^ 3;"), [8])
-        self.assertEqual(get_ast("print 2 ^ 2 ^ 3;"), ["block", ["print", ["^", 2, ["^", 2, 3]]]])
+        self.assertEqual(get_ast("print 2 ^ 2 ^ 3;"), ["program", ["print", ["^", 2, ["^", 2, 3]]]])
         self.assertEqual(get_output("print 2 ^ 2 ^ 3;"), [256])
 
     def test_factor(self):
         self.assertEqual(get_output("print 2 * 3;"), [6])
-        self.assertEqual(get_ast("print 2 * 3 * 4;"), ["block", ["print", ["*", ["*", 2, 3], 4]]])
+        self.assertEqual(get_ast("print 2 * 3 * 4;"), ["program", ["print", ["*", ["*", 2, 3], 4]]])
         self.assertEqual(get_output("print 2 * 3 * 4;"), [24])
         self.assertEqual(get_output("print 24 / 2;"), [12])
-        self.assertEqual(get_ast("print 24 / 4 / 2;"), ["block", ["print", ["/", ["/", 24, 4], 2]]])
+        self.assertEqual(get_ast("print 24 / 4 / 2;"), ["program", ["print", ["/", ["/", 24, 4], 2]]])
         self.assertEqual(get_output("print 24 / 4 / 2;"), [3])
         self.assertEqual(get_output("print 2 ^ 3 * 2;"), [16])
         self.assertEqual(get_output("print 2 * 2 ^ 3;"), [16])
 
     def test_term(self):
         self.assertEqual(get_output("print 2 + 3;"), [5])
-        self.assertEqual(get_ast("print 2 + 3 + 4;"), ["block", ["print", ["+", ["+", 2, 3], 4]]])
+        self.assertEqual(get_ast("print 2 + 3 + 4;"), ["program", ["print", ["+", ["+", 2, 3], 4]]])
         self.assertEqual(get_output("print 2 + 3 + 4;"), [9])
         self.assertEqual(get_output("print 9 - 3;"), [6])
-        self.assertEqual(get_ast("print 9 - 4 - 2;"), ["block", ["print", ["-", ["-", 9, 4], 2]]])
+        self.assertEqual(get_ast("print 9 - 4 - 2;"), ["program", ["print", ["-", ["-", 9, 4], 2]]])
         self.assertEqual(get_output("print 9 - 4 - 2;"), [3])
-        self.assertEqual(get_ast("print 2 + 3 * 4;"), ["block", ["print", ["+", 2, ["*", 3, 4]]]])
+        self.assertEqual(get_ast("print 2 + 3 * 4;"), ["program", ["print", ["+", 2, ["*", 3, 4]]]])
         self.assertEqual(get_output("print 2 + 3 * 4;"), [14])
-        self.assertEqual(get_ast("print 2 * 3 + 4;"), ["block", ["print", ["+", ["*", 2, 3], 4]]])
+        self.assertEqual(get_ast("print 2 * 3 + 4;"), ["program", ["print", ["+", ["*", 2, 3], 4]]])
         self.assertEqual(get_output("print 2 * 3 + 4;"), [10])
 
     def test_equality(self):
@@ -66,14 +66,14 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 2 = 3;"), [0])
         self.assertEqual(get_output("print 2 # 2;"), [0])
         self.assertEqual(get_output("print 2 # 3;"), [1])
-        self.assertEqual(get_ast("print 1 = 2 = 2;"), ["block", ["print", ["=", ["=", 1, 2], 2]]])
+        self.assertEqual(get_ast("print 1 = 2 = 2;"), ["program", ["print", ["=", ["=", 1, 2], 2]]])
         self.assertEqual(get_output("print 1 = 2 = 2;"), [0])
         self.assertEqual(get_output("print 1 + 2 = 6 - 3;"), [1])
 
     def test_grouping(self):
-        self.assertEqual(get_ast("print (2 + 3) * 4;"), ["block", ["print", ["*", ["+", 2, 3], 4]]])
+        self.assertEqual(get_ast("print (2 + 3) * 4;"), ["program", ["print", ["*", ["+", 2, 3], 4]]])
         self.assertEqual(get_output("print (2 + 3) * 4;"), [20])
-        self.assertEqual(get_ast("print 2 * (3 + 4);"), ["block", ["print", ["*", 2, ["+", 3, 4]]]])
+        self.assertEqual(get_ast("print 2 * (3 + 4);"), ["program", ["print", ["*", 2, ["+", 3, 4]]]])
         self.assertEqual(get_output("print 2 * (3 + 4);"), [14])
 
     def test_var(self):
@@ -93,7 +93,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("var a = 2; { var b = 4; print b; } print b;"), "`b` not defined.")
 
     def test_if(self):
-        self.assertEqual(get_ast("if 1 { print 2; }"), ["block", ["if", 1, ["block", ["print", 2]], ["block"]]])
+        self.assertEqual(get_ast("if 1 { print 2; }"), ["program", ["if", 1, ["block", ["print", 2]], ["block"]]])
         self.assertEqual(get_output("if 1 { print 2; }"), [2])
         self.assertEqual(get_output("if 0 { print 2; }"), [])
         self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; }"), [1])
@@ -104,7 +104,7 @@ class TestMinilang(unittest.TestCase):
 
     def test_else(self):
         self.assertEqual(get_ast("if 1 { print 2; } else { print 3; }"),
-                         ["block", ["if", 1, ["block", ["print", 2]], ["block", ["print", 3]]]])
+                         ["program", ["if", 1, ["block", ["print", 2]], ["block", ["print", 3]]]])
         self.assertEqual(get_output("if 1 { print 2; } else { print 3; }"), [2])
         self.assertEqual(get_output("if 0 { print 2; } else { print 3; }"), [3])
         self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; } else { print 2; }"), [1])
@@ -123,13 +123,13 @@ class TestMinilang(unittest.TestCase):
 
     def test_builtin_function(self):
         self.assertEqual(get_ast("print less(2 + 3, 2 * 3);"),
-                         ["block", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
+                         ["program", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
         self.assertEqual(get_output("print less(2 + 3, 2 * 3);"), [1])
         self.assertEqual(get_output("print less(2 * 3, 2 + 3);"), [0])
         self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
 
     def test_expression_statement(self):
-        self.assertEqual(get_ast("2 + 3;"), ["block", ["expr", ["+", 2, 3]]])
+        self.assertEqual(get_ast("2 + 3;"), ["program", ["expr", ["+", 2, 3]]])
         self.assertEqual(get_output("2 + 3;"), [])
 
     def test_user_function(self):
