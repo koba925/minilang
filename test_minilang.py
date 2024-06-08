@@ -133,6 +133,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("2 + 3;"), [])
 
     def test_user_function(self):
+        self.assertEqual(get_output("func() { print 2; }();"), [2])
         self.assertEqual(get_output("func(a, b) { print a + b; }(2, 3);"), [5])
         self.assertEqual(get_output("""
                                     var sum = func(a, b) {
@@ -142,6 +143,10 @@ class TestMinilang(unittest.TestCase):
                                     """), [5, 9])
 
     def test_return(self):
+        self.assertEqual(get_output("func() { print 1; return; print 2; }();"), [1])
+        self.assertEqual(get_output("print func() {}();"), [0])
+        self.assertEqual(get_output("print func() { return; }();"), [0])
+        self.assertEqual(get_output("print func() { return 2; }();"), [2])
         self.assertEqual(get_output("print func(a, b) { return a + b; }(2, 3);"), [5])
         self.assertEqual(get_output("""
                                     var sum = func(a, b) {
@@ -150,6 +155,17 @@ class TestMinilang(unittest.TestCase):
                                     print sum(2, 3);
                                     print sum(4, 5);
                                     """), [5, 9])
+        self.assertEqual(get_output("print func(b) { return func(a) { return a + b; }; }(2)(3);"), [5])
+
+    def test_closure(self):
+        self.assertEqual(get_output("""
+                                    var make_adder = func(a) {
+                                        return func(b) { return a + b; };
+                                    };
+                                    var a = 1;
+                                    var add_2 = make_adder(2);
+                                    print add_2(3);
+                                    """), [5])
 
 if __name__ == "__main__":
     unittest.main()

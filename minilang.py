@@ -78,7 +78,8 @@ class Parser:
 
     def _parse_return(self):
         self._next_token()
-        value = self._parse_expression()
+        value = 0
+        if self._current_token != ";": value = self._parse_expression()
         self._consume_token(";")
         return ["return", value]
 
@@ -258,7 +259,7 @@ class Evaluator:
         match expression:
             case int(value): return value
             case str(name): return self._eval_variable(name)
-            case ["func", param, body]: return ["func", param, body]
+            case ["func", param, body]: return ["func", param, body, self._env]
             case ["=", a, b]: return 1 if self._eval_exp(a) == self._eval_exp(b) else 0
             case ["#", a, b]: return 1 if self._eval_exp(a) != self._eval_exp(b) else 0
             case ["+", a, b]: return self._eval_exp(a) + self._eval_exp(b)
@@ -273,11 +274,11 @@ class Evaluator:
 
     def _apply(self, op, args):
         parent_env = self._env
-        self._env = dict(zip(op[1], args)) | { "_parent": parent_env }
+        self._env = dict(zip(op[1], args)) | { "_parent": op[3] }
         value = 0
         try: self.eval_statement(op[2])
         except Return as ret: value = ret.value
-        self.env = parent_env
+        self._env = parent_env
         return value
 
     def _eval_variable(self, name):
