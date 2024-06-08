@@ -44,6 +44,7 @@ class Parser:
             case "{": return self._parse_block()
             case "var" | "set": return self._parse_var_set()
             case "if": return self._parse_if()
+            case "while": return self._parse_while()
             case "print": return self._parse_print()
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
@@ -67,11 +68,18 @@ class Parser:
             alternative = self._parse_block()
         return ["if", condtion, consequence, alternative]
 
-    def _parse_var_set(self, ):
+    def _parse_while(self):
+        self._next_token()
+        condtion = self._parse_expression()
+        self._check_token("{")
+        body = self._parse_block()
+        return ["while", condtion, body]
+
+    def _parse_var_set(self):
         op = self._current_token
         self._next_token()
         name = self._parse_primary()
-        assert isinstance(name, str),  f"Expected a name, found `name`."
+        assert isinstance(name, str),  f"Expected a name, found `{name}`."
         self._consume_token("=")
         value = self._parse_expression()
         self._consume_token(";")
@@ -148,22 +156,18 @@ class Evaluator:
     def eval_statement(self, statement):
         match statement:
             case ["block", *statements]: self._eval_block(statements)
-            case ["if", condition, consequence, alternative]:
-                self._eval_if(condition, consequence, alternative)
             case ["var", name, value]: self._eval_var(name, value)
             case ["set", name, value]: self._eval_set(name, value)
+            case ["if", condition, consequence, alternative]:
+                self._eval_if(condition, consequence, alternative)
+            case ["while", condition, body]:
+                self._eval_while(condition, body)
             case ["print", expression]: self._eval_print(expression)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _eval_block(self, statements):
         for statement in statements:
             self.eval_statement(statement)
-
-    def _eval_if(self, condition, consequence, alternative):
-        if self._eval_exp(condition) != 0:
-            self.eval_statement(consequence)
-        else:
-            self.eval_statement(alternative)
 
     def _eval_var(self, name, value):
         assert name not in self._env, f"`{name}` already defined."
@@ -172,6 +176,16 @@ class Evaluator:
     def _eval_set(self, name, value):
         assert name in self._env, f"`{name}` not defined."
         self._env[name] = self._eval_exp(value)
+
+    def _eval_if(self, condition, consequence, alternative):
+        if self._eval_exp(condition) != 0:
+            self.eval_statement(consequence)
+        else:
+            self.eval_statement(alternative)
+
+    def _eval_while(self, condition, body):
+        while self._eval_exp(condition) != 0:
+            self.eval_statement(body)
 
     def _eval_print(self, expression):
         self._output.append(self._eval_exp(expression))

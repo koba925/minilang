@@ -74,6 +74,17 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_ast("print 2 * (3 + 4);"), ["block", ["print", ["*", 2, ["+", 3, 4]]]])
         self.assertEqual(get_output("print 2 * (3 + 4);"), [14])
 
+    def test_var(self):
+        self.assertEqual(get_output("var a = 1 + 2; print a; set a = a + 3; print a;"), [3, 6])
+        self.assertEqual(get_output("var a = 1; var b = 2; print a; print b;"), [1, 2])
+        self.assertEqual(get_error("var a;"), "Expected `=`, found `;`.")
+        self.assertEqual(get_error("var 1 = 1;"), "Expected a name, found `1`.")
+        self.assertEqual(get_error("var a = 1; var a = 1;"), "`a` already defined.")
+        self.assertEqual(get_error("set a;"), "Expected `=`, found `;`.")
+        self.assertEqual(get_error("set 1 = 1;"), "Expected a name, found `1`.")
+        self.assertEqual(get_error("set a = 1;"), "`a` not defined.")
+        self.assertEqual(get_error("print a;"), "`a` not defined.")
+
     def test_if(self):
         self.assertEqual(get_ast("if 1 { print 2; }"), ["block", ["if", 1, ["block", ["print", 2]], ["block"]]])
         self.assertEqual(get_output("if 1 { print 2; }"), [2])
@@ -93,14 +104,15 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; } else { print 2; }"), [2])
         self.assertEqual(get_error("if 1 { print 2; } else print 3;"), "Expected `{`, found `print`.")
 
-    def test_var(self):
-        self.assertEqual(get_output("var a = 1 + 2; print a; set a = a + 3; print a;"), [3, 6])
-        self.assertEqual(get_output("var a = 1; var b = 2; print a; print b;"), [1, 2])
-        self.assertEqual(get_error("var a;"), "Expected `=`, found `;`.")
-        self.assertEqual(get_error("var a = 1; var a = 1;"), "`a` already defined.")
-        self.assertEqual(get_error("set a;"), "Expected `=`, found `;`.")
-        self.assertEqual(get_error("set a = 1;"), "`a` not defined.")
-        self.assertEqual(get_error("print a;"), "`a` not defined.")
+    def test_while(self):
+        self.assertEqual(get_output("""
+                                    var i = 0;
+                                    while i # 3 {
+                                        print i;
+                                        set i = i + 1;
+                                    }
+                                    """), [0, 1, 2])
+        self.assertEqual(get_error("while 1 print 2;"), "Expected `{`, found `print`.")
 
 if __name__ == "__main__":
     unittest.main()
