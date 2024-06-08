@@ -42,6 +42,7 @@ class Parser:
     def _parse_statement(self):
         match self._current_token:
             case "{": return self._parse_block()
+            case "var" | "set": return self._parse_var_set()
             case "if": return self._parse_if()
             case "print": return self._parse_print()
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
@@ -65,6 +66,16 @@ class Parser:
             self._check_token("{")
             alternative = self._parse_block()
         return ["if", condtion, consequence, alternative]
+
+    def _parse_var_set(self, ):
+        op = self._current_token
+        self._next_token()
+        name = self._parse_primary()
+        assert isinstance(name, str),  f"Expected a name, found `name`."
+        self._consume_token("=")
+        value = self._parse_expression()
+        self._consume_token(";")
+        return [op, name, value]
 
     def _parse_print(self):
         self._next_token()
@@ -104,14 +115,14 @@ class Parser:
 
     def _parse_primary(self):
         match self._current_token:
-            case int(value):
-                self._next_token()
-                return value
             case "(":
                 self._next_token()
                 exp = self._parse_expression()
                 self._consume_token(")")
                 return exp
+            case int(value) | str(value):
+                self._next_token()
+                return value
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
     def _check_token(self, expected_token):
@@ -129,6 +140,7 @@ class Parser:
 class Evaluator:
     def __init__(self):
         self._output = []
+        self._env = {}
 
     def clear_output(self): self._output = []
     def output(self): return self._output
@@ -138,8 +150,10 @@ class Evaluator:
             case ["block", *statements]: self._eval_block(statements)
             case ["if", condition, consequence, alternative]:
                 self._eval_if(condition, consequence, alternative)
+            case ["var", name, value]: self._eval_var(name, value)
+            case ["set", name, value]: self._eval_set(name, value)
             case ["print", expression]: self._eval_print(expression)
-            case unexpected: assert False, f"Internal Error at `{unexpected}`"
+            case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _eval_block(self, statements):
         for statement in statements:
@@ -151,12 +165,21 @@ class Evaluator:
         else:
             self.eval_statement(alternative)
 
+    def _eval_var(self, name, value):
+        assert name not in self._env, f"`{name}` already defined."
+        self._env[name] = self._eval_exp(value)
+
+    def _eval_set(self, name, value):
+        assert name in self._env, f"`{name}` not defined."
+        self._env[name] = self._eval_exp(value)
+
     def _eval_print(self, expression):
         self._output.append(self._eval_exp(expression))
 
     def _eval_exp(self, expression):
         match expression:
             case int(value): return value
+            case str(name): return self._eval_variable(name)
             case ["=", a, b]: return 1 if self._eval_exp(a) == self._eval_exp(b) else 0
             case ["#", a, b]: return 1 if self._eval_exp(a) != self._eval_exp(b) else 0
             case ["+", a, b]: return self._eval_exp(a) + self._eval_exp(b)
@@ -165,6 +188,10 @@ class Evaluator:
             case ["/", a, b]: return self._eval_exp(a) // self._eval_exp(b)
             case ["^", a, b]: return self._eval_exp(a) ** self._eval_exp(b)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
+
+    def _eval_variable(self, name):
+        assert name in self._env, f"`{name}` not defined."
+        return self._env[name]
 
 if __name__ == "__main__":
     evaluator = Evaluator()

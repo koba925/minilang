@@ -19,7 +19,6 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1;"), [1])
         self.assertEqual(get_output("  print\n  12  ;\n  "), [12])
         self.assertEqual(get_error("prin 1;"), "Unexpected token `prin`.")
-        self.assertEqual(get_error("print a;"), "Unexpected token `a`.")
         self.assertEqual(get_error("print 1:"), "Expected `;`, found `:`.")
         self.assertEqual(get_error("print 1"), "Expected `;`, found `$EOF`.")
 
@@ -83,7 +82,6 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; }"), [])
         self.assertEqual(get_output("if 1 { if 1 { print 2; } }"), [2])
         self.assertEqual(get_output("if 1 { if 0 { print 2; } }"), [])
-        self.assertEqual(get_error("if a { print 2; }"), "Unexpected token `a`.")
         self.assertEqual(get_error("if 1 print 2;"), "Expected `{`, found `print`.")
 
     def test_else(self):
@@ -94,6 +92,15 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; } else { print 2; }"), [1])
         self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; } else { print 2; }"), [2])
         self.assertEqual(get_error("if 1 { print 2; } else print 3;"), "Expected `{`, found `print`.")
+
+    def test_var(self):
+        self.assertEqual(get_output("var a = 1 + 2; print a; set a = a + 3; print a;"), [3, 6])
+        self.assertEqual(get_output("var a = 1; var b = 2; print a; print b;"), [1, 2])
+        self.assertEqual(get_error("var a;"), "Expected `=`, found `;`.")
+        self.assertEqual(get_error("var a = 1; var a = 1;"), "`a` already defined.")
+        self.assertEqual(get_error("set a;"), "Expected `=`, found `;`.")
+        self.assertEqual(get_error("set a = 1;"), "`a` not defined.")
+        self.assertEqual(get_error("print a;"), "`a` not defined.")
 
 if __name__ == "__main__":
     unittest.main()
