@@ -45,6 +45,7 @@ class Parser:
             case "var" | "set": return self._parse_var_set()
             case "if": return self._parse_if()
             case "while": return self._parse_while()
+            case "return": return self._parse_return()
             case "print": return self._parse_print()
             case _: return self._expression_statement()
 
@@ -74,6 +75,12 @@ class Parser:
         self._check_token("{")
         body = self._parse_block()
         return ["while", condtion, body]
+
+    def _parse_return(self):
+        self._next_token()
+        value = self._parse_expression()
+        self._consume_token(";")
+        return ["return", value]
 
     def _parse_var_set(self):
         op = self._current_token
@@ -179,6 +186,9 @@ class Parser:
         self._current_token = self.scanner.next_token()
         return self._current_token
 
+class Return(Exception):
+    def __init__(self, value): self.value = value
+
 class Evaluator:
     def __init__(self):
         self._output = []
@@ -205,8 +215,9 @@ class Evaluator:
                 self._eval_if(condition, consequence, alternative)
             case ["while", condition, body]:
                 self._eval_while(condition, body)
-            case ["expression", expression]: self._eval_expression(expression)
+            case ["return", value]: raise Return(self._eval_exp(value))
             case ["print", expression]: self._eval_print(expression)
+            case ["expression", expression]: self._eval_exp_stmt(expression)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _eval_block(self, statements):
@@ -237,7 +248,7 @@ class Evaluator:
         while self._eval_exp(condition) != 0:
             self.eval_statement(body)
 
-    def _eval_expression(self, expression):
+    def _eval_exp_stmt(self, expression):
         self._eval_exp(expression)
 
     def _eval_print(self, expression):
@@ -263,9 +274,11 @@ class Evaluator:
     def _apply(self, op, args):
         parent_env = self._env
         self._env = dict(zip(op[1], args)) | { "_parent": parent_env }
-        self.eval_statement(op[2])
+        value = 0
+        try: self.eval_statement(op[2])
+        except Return as ret: value = ret.value
         self.env = parent_env
-        return 0
+        return value
 
     def _eval_variable(self, name):
         def _get(env):

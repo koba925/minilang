@@ -141,6 +141,15 @@ class TestMinilang(unittest.TestCase):
                                     sum(2, 3); sum(4, 5);
                                     """), [5, 9])
 
+    def test_return(self):
+        self.assertEqual(get_output("print func(a, b) { return a + b; }(2, 3);"), [5])
+        self.assertEqual(get_output("""
+                                    var sum = func(a, b) {
+                                        return a + b;
+                                    };
+                                    print sum(2, 3);
+                                    print sum(4, 5);
+                                    """), [5, 9])
 
 if __name__ == "__main__":
     unittest.main()
