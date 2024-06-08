@@ -127,18 +127,15 @@ class Parser:
         return ["^", power, self._parse_power()]
 
     def _parse_call(self):
-        def arguments():
+        call = self._parse_primary()
+        while self._current_token == "(":
+            self._next_token()
             args = []
             while self._current_token != ")":
                 args.append(self._parse_expression())
                 if self._current_token != ")":
                     self._consume_token(",")
-            return args
-
-        call = self._parse_primary()
-        while self._current_token == "(":
-            self._next_token()
-            call = [call] + arguments()
+            call = [call] + args
             self._consume_token(")")
         return call
 
@@ -149,10 +146,26 @@ class Parser:
                 exp = self._parse_expression()
                 self._consume_token(")")
                 return exp
+            case "func": return self._parse_func()
             case int(value) | str(value):
                 self._next_token()
                 return value
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
+
+    def _parse_func(self):
+        self._next_token()
+        self._consume_token("(")
+        params = []
+        while self._current_token != ")":
+            param = self._current_token
+            assert isinstance(param, str), f"Name expected, found `{param}`."
+            self._next_token()
+            params.append(param)
+            if self._current_token != ")":
+                self._consume_token(",")
+        self._consume_token(")")
+        body = self._parse_block()
+        return ["func", params, body]
 
     def _check_token(self, expected_token):
         assert self._current_token == expected_token, \
@@ -234,6 +247,7 @@ class Evaluator:
         match expression:
             case int(value): return value
             case str(name): return self._eval_variable(name)
+            case ["func", param, body]: return ["func", param, body]
             case ["=", a, b]: return 1 if self._eval_exp(a) == self._eval_exp(b) else 0
             case ["#", a, b]: return 1 if self._eval_exp(a) != self._eval_exp(b) else 0
             case ["+", a, b]: return self._eval_exp(a) + self._eval_exp(b)
@@ -241,12 +255,17 @@ class Evaluator:
             case ["*", a, b]: return self._eval_exp(a) * self._eval_exp(b)
             case ["/", a, b]: return self._eval_exp(a) // self._eval_exp(b)
             case ["^", a, b]: return self._eval_exp(a) ** self._eval_exp(b)
-            case [op, *args]: return self._apply(op, args)
+            case [op, *args]:
+                op, args = self._eval_exp(op), [self._eval_exp(arg) for arg in args]
+                return op(*args) if callable(op) else self._apply(op, args)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
     def _apply(self, op, args):
-        op, args = self._eval_exp(op), [self._eval_exp(arg) for arg in args]
-        return op(*args)
+        parent_env = self._env
+        self._env = dict(zip(op[1], args)) | { "_parent": parent_env }
+        self.eval_statement(op[2])
+        self.env = parent_env
+        return 0
 
     def _eval_variable(self, name):
         def _get(env):

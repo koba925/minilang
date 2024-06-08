@@ -121,7 +121,7 @@ class TestMinilang(unittest.TestCase):
                                     """), [0, 1, 2])
         self.assertEqual(get_error("while 1 print 2;"), "Expected `{`, found `print`.")
 
-    def test_less(self):
+    def test_builtin_function(self):
         self.assertEqual(get_ast("print less(2 + 3, 2 * 3);"),
                          ["block", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
         self.assertEqual(get_output("print less(2 + 3, 2 * 3);"), [1])
@@ -131,6 +131,16 @@ class TestMinilang(unittest.TestCase):
     def test_expression_statement(self):
         self.assertEqual(get_ast("2 + 3;"), ["block", ["expression", ["+", 2, 3]]])
         self.assertEqual(get_output("2 + 3;"), [])
+
+    def test_user_function(self):
+        self.assertEqual(get_output("func(a, b) { print a + b; }(2, 3);"), [5])
+        self.assertEqual(get_output("""
+                                    var sum = func(a, b) {
+                                        print a + b;
+                                    };
+                                    sum(2, 3); sum(4, 5);
+                                    """), [5, 9])
+
 
 if __name__ == "__main__":
     unittest.main()
