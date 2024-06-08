@@ -114,5 +114,10 @@ class TestMinilang(unittest.TestCase):
                                     """), [0, 1, 2])
         self.assertEqual(get_error("while 1 print 2;"), "Expected `{`, found `print`.")
 
+    def test_scope(self):
+        self.assertEqual(get_output("var a = 2; { var a = 4; print a; } print a;"), [4, 2])
+        self.assertEqual(get_output("var a = 2; { set a = 4; print a; } print a;"), [4, 4])
+        self.assertEqual(get_error("var a = 2; { var b = 4; print b; } print b;"), "`b` not defined.")
+
 if __name__ == "__main__":
     unittest.main()

@@ -166,16 +166,22 @@ class Evaluator:
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _eval_block(self, statements):
+        parent_env = self._env
+        self._env = {"_parent": parent_env}
         for statement in statements:
             self.eval_statement(statement)
+        self._env = parent_env
 
     def _eval_var(self, name, value):
         assert name not in self._env, f"`{name}` already defined."
         self._env[name] = self._eval_exp(value)
 
     def _eval_set(self, name, value):
-        assert name in self._env, f"`{name}` not defined."
-        self._env[name] = self._eval_exp(value)
+        def _set(env):
+            if name in env: env[name] = self._eval_exp(value)
+            elif "_parent" in env: _set(env["_parent"])
+            else: assert False, f"`{name}` not defined."
+        _set(self._env)
 
     def _eval_if(self, condition, consequence, alternative):
         if self._eval_exp(condition) != 0:
@@ -204,8 +210,11 @@ class Evaluator:
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
     def _eval_variable(self, name):
-        assert name in self._env, f"`{name}` not defined."
-        return self._env[name]
+        def _get(env):
+            if name in env: return self._eval_exp(env[name])
+            if "_parent" in env: return _get(env["_parent"])
+            assert False, f"`{name}` not defined."
+        return _get(self._env)
 
 if __name__ == "__main__":
     evaluator = Evaluator()
