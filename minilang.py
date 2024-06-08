@@ -47,7 +47,7 @@ class Parser:
             case "while": return self._parse_while()
             case "return": return self._parse_return()
             case "print": return self._parse_print()
-            case _: return self._expression_statement()
+            case _: return self._parse_expression_statement()
 
     def _parse_block(self):
         block: list = ["block"]
@@ -59,15 +59,15 @@ class Parser:
 
     def _parse_if(self):
         self._next_token()
-        condtion = self._parse_expression()
+        cond = self._parse_expression()
         self._check_token("{")
-        consequence = self._parse_block()
-        alternative = ["block"]
+        conseq = self._parse_block()
+        alt = ["block"]
         if self._current_token == "else":
             self._next_token()
             self._check_token("{")
-            alternative = self._parse_block()
-        return ["if", condtion, consequence, alternative]
+            alt = self._parse_block()
+        return ["if", cond, conseq, alt]
 
     def _parse_while(self):
         self._next_token()
@@ -95,14 +95,14 @@ class Parser:
 
     def _parse_print(self):
         self._next_token()
-        expression = self._parse_expression()
+        expr = self._parse_expression()
         self._consume_token(";")
-        return ["print", expression]
+        return ["print", expr]
 
-    def _expression_statement(self):
-        expression = self._parse_expression()
+    def _parse_expression_statement(self):
+        expr = self._parse_expression()
         self._consume_token(";")
-        return ["expression", expression]
+        return ["expr", expr]
 
     def _parse_expression(self):
         return self._parse_equality()
@@ -212,13 +212,11 @@ class Evaluator:
             case ["block", *statements]: self._eval_block(statements)
             case ["var", name, value]: self._eval_var(name, value)
             case ["set", name, value]: self._eval_set(name, value)
-            case ["if", condition, consequence, alternative]:
-                self._eval_if(condition, consequence, alternative)
-            case ["while", condition, body]:
-                self._eval_while(condition, body)
-            case ["return", value]: raise Return(self._eval_exp(value))
-            case ["print", expression]: self._eval_print(expression)
-            case ["expression", expression]: self._eval_exp_stmt(expression)
+            case ["if", cond, conseq, alt]: self._eval_if(cond, conseq, alt)
+            case ["while", cond, body]: self._eval_while(cond, body)
+            case ["return", value]: raise Return(self._eval_expr(value))
+            case ["print", expr]: self._eval_print(expr)
+            case ["expr", expr]: self._eval_expr(expr)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _eval_block(self, statements):
@@ -230,45 +228,42 @@ class Evaluator:
 
     def _eval_var(self, name, value):
         assert name not in self._env, f"`{name}` already defined."
-        self._env[name] = self._eval_exp(value)
+        self._env[name] = self._eval_expr(value)
 
     def _eval_set(self, name, value):
         def _set(env):
-            if name in env: env[name] = self._eval_exp(value)
+            if name in env: env[name] = self._eval_expr(value)
             elif "_parent" in env: _set(env["_parent"])
             else: assert False, f"`{name}` not defined."
         _set(self._env)
 
-    def _eval_if(self, condition, consequence, alternative):
-        if self._eval_exp(condition) != 0:
-            self.eval_statement(consequence)
+    def _eval_if(self, cond, conseq, alt):
+        if self._eval_expr(cond) != 0:
+            self.eval_statement(conseq)
         else:
-            self.eval_statement(alternative)
+            self.eval_statement(alt)
 
-    def _eval_while(self, condition, body):
-        while self._eval_exp(condition) != 0:
+    def _eval_while(self, cond, body):
+        while self._eval_expr(cond) != 0:
             self.eval_statement(body)
 
-    def _eval_exp_stmt(self, expression):
-        self._eval_exp(expression)
+    def _eval_print(self, expr):
+        self._output.append(self._eval_expr(expr))
 
-    def _eval_print(self, expression):
-        self._output.append(self._eval_exp(expression))
-
-    def _eval_exp(self, expression):
-        match expression:
+    def _eval_expr(self, expr):
+        match expr:
             case int(value): return value
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
-            case ["=", a, b]: return 1 if self._eval_exp(a) == self._eval_exp(b) else 0
-            case ["#", a, b]: return 1 if self._eval_exp(a) != self._eval_exp(b) else 0
-            case ["+", a, b]: return self._eval_exp(a) + self._eval_exp(b)
-            case ["-", a, b]: return self._eval_exp(a) - self._eval_exp(b)
-            case ["*", a, b]: return self._eval_exp(a) * self._eval_exp(b)
-            case ["/", a, b]: return self._eval_exp(a) // self._eval_exp(b)
-            case ["^", a, b]: return self._eval_exp(a) ** self._eval_exp(b)
+            case ["=", a, b]: return 1 if self._eval_expr(a) == self._eval_expr(b) else 0
+            case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
+            case ["+", a, b]: return self._eval_expr(a) + self._eval_expr(b)
+            case ["-", a, b]: return self._eval_expr(a) - self._eval_expr(b)
+            case ["*", a, b]: return self._eval_expr(a) * self._eval_expr(b)
+            case ["/", a, b]: return self._eval_expr(a) // self._eval_expr(b)
+            case ["^", a, b]: return self._eval_expr(a) ** self._eval_expr(b)
             case [op, *args]:
-                op, args = self._eval_exp(op), [self._eval_exp(arg) for arg in args]
+                op, args = self._eval_expr(op), [self._eval_expr(arg) for arg in args]
                 return op(*args) if callable(op) else self._apply(op, args)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 

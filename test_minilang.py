@@ -129,7 +129,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
 
     def test_expression_statement(self):
-        self.assertEqual(get_ast("2 + 3;"), ["block", ["expression", ["+", 2, 3]]])
+        self.assertEqual(get_ast("2 + 3;"), ["block", ["expr", ["+", 2, 3]]])
         self.assertEqual(get_output("2 + 3;"), [])
 
     def test_user_function(self):
