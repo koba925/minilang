@@ -46,7 +46,7 @@ class Parser:
             case "if": return self._parse_if()
             case "while": return self._parse_while()
             case "print": return self._parse_print()
-            case unexpected: assert False, f"Unexpected token `{unexpected}`."
+            case _: return self._expression_statement()
 
     def _parse_block(self):
         block: list = ["block"]
@@ -91,6 +91,11 @@ class Parser:
         self._consume_token(";")
         return ["print", expression]
 
+    def _expression_statement(self):
+        expression = self._parse_expression()
+        self._consume_token(";")
+        return ["expression", expression]
+
     def _parse_expression(self):
         return self._parse_equality()
 
@@ -116,10 +121,26 @@ class Parser:
         return mult_div
 
     def _parse_power(self):
-        exp = self._parse_primary()
-        if self._current_token != "^": return exp
+        power = self._parse_call()
+        if self._current_token != "^": return power
         self._next_token()
-        return ["^", exp, self._parse_power()]
+        return ["^", power, self._parse_power()]
+
+    def _parse_call(self):
+        def arguments():
+            args = []
+            while self._current_token != ")":
+                args.append(self._parse_expression())
+                if self._current_token != ")":
+                    self._consume_token(",")
+            return args
+
+        call = self._parse_primary()
+        while self._current_token == "(":
+            self._next_token()
+            call = [call] + arguments()
+            self._consume_token(")")
+        return call
 
     def _parse_primary(self):
         match self._current_token:
@@ -148,10 +169,19 @@ class Parser:
 class Evaluator:
     def __init__(self):
         self._output = []
-        self._env = {}
+        self._env: dict = {
+            "less": lambda a, b: 1 if a < b else 0,
+            "print_env": self._print_env
+        }
 
     def clear_output(self): self._output = []
     def output(self): return self._output
+
+    def _print_env(self):
+        def _print(env, level):
+            print(level, { k:"<builtin>" if callable(v) else v for k, v in env.items() if k != "_parent" })
+            if "_parent" in env: _print(env["_parent"], level + 1)
+        _print(self._env, 0)
 
     def eval_statement(self, statement):
         match statement:
@@ -162,6 +192,7 @@ class Evaluator:
                 self._eval_if(condition, consequence, alternative)
             case ["while", condition, body]:
                 self._eval_while(condition, body)
+            case ["expression", expression]: self._eval_expression(expression)
             case ["print", expression]: self._eval_print(expression)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
@@ -193,6 +224,9 @@ class Evaluator:
         while self._eval_exp(condition) != 0:
             self.eval_statement(body)
 
+    def _eval_expression(self, expression):
+        self._eval_exp(expression)
+
     def _eval_print(self, expression):
         self._output.append(self._eval_exp(expression))
 
@@ -207,11 +241,16 @@ class Evaluator:
             case ["*", a, b]: return self._eval_exp(a) * self._eval_exp(b)
             case ["/", a, b]: return self._eval_exp(a) // self._eval_exp(b)
             case ["^", a, b]: return self._eval_exp(a) ** self._eval_exp(b)
+            case [op, *args]: return self._apply(op, args)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
+
+    def _apply(self, op, args):
+        op, args = self._eval_exp(op), [self._eval_exp(arg) for arg in args]
+        return op(*args)
 
     def _eval_variable(self, name):
         def _get(env):
-            if name in env: return self._eval_exp(env[name])
+            if name in env: return env[name]
             if "_parent" in env: return _get(env["_parent"])
             assert False, f"`{name}` not defined."
         return _get(self._env)

@@ -18,14 +18,16 @@ class TestMinilang(unittest.TestCase):
     def test_print(self):
         self.assertEqual(get_output("print 1;"), [1])
         self.assertEqual(get_output("  print\n  12  ;\n  "), [12])
-        self.assertEqual(get_error("prin 1;"), "Unexpected token `prin`.")
+        # self.assertEqual(get_error("prin 1;"), "Unexpected token `prin`.")
+        self.assertEqual(get_error("prin 1;"), "Expected `;`, found `1`.")
         self.assertEqual(get_error("print 1:"), "Expected `;`, found `:`.")
         self.assertEqual(get_error("print 1"), "Expected `;`, found `$EOF`.")
 
     def test_statements(self):
         self.assertEqual(get_output(""), [])
         self.assertEqual(get_output("print 1; print 2;"), [1, 2])
-        self.assertEqual(get_error("print 1; prin"), "Unexpected token `prin`.")
+        # self.assertEqual(get_error("print 1; prin"), "Unexpected token `prin`.")
+        self.assertEqual(get_error("print 1; prin"), "Expected `;`, found `$EOF`.")
 
     def test_block(self):
         self.assertEqual(get_ast("print 1; { print 2; print 3; } print 4;"),
@@ -85,6 +87,11 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("set a = 1;"), "`a` not defined.")
         self.assertEqual(get_error("print a;"), "`a` not defined.")
 
+    def test_scope(self):
+        self.assertEqual(get_output("var a = 2; { var a = 4; print a; } print a;"), [4, 2])
+        self.assertEqual(get_output("var a = 2; { set a = 4; print a; } print a;"), [4, 4])
+        self.assertEqual(get_error("var a = 2; { var b = 4; print b; } print b;"), "`b` not defined.")
+
     def test_if(self):
         self.assertEqual(get_ast("if 1 { print 2; }"), ["block", ["if", 1, ["block", ["print", 2]], ["block"]]])
         self.assertEqual(get_output("if 1 { print 2; }"), [2])
@@ -114,10 +121,16 @@ class TestMinilang(unittest.TestCase):
                                     """), [0, 1, 2])
         self.assertEqual(get_error("while 1 print 2;"), "Expected `{`, found `print`.")
 
-    def test_scope(self):
-        self.assertEqual(get_output("var a = 2; { var a = 4; print a; } print a;"), [4, 2])
-        self.assertEqual(get_output("var a = 2; { set a = 4; print a; } print a;"), [4, 4])
-        self.assertEqual(get_error("var a = 2; { var b = 4; print b; } print b;"), "`b` not defined.")
+    def test_less(self):
+        self.assertEqual(get_ast("print less(2 + 3, 2 * 3);"),
+                         ["block", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
+        self.assertEqual(get_output("print less(2 + 3, 2 * 3);"), [1])
+        self.assertEqual(get_output("print less(2 * 3, 2 + 3);"), [0])
+        self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
+
+    def test_expression_statement(self):
+        self.assertEqual(get_ast("2 + 3;"), ["block", ["expression", ["+", 2, 3]]])
+        self.assertEqual(get_output("2 + 3;"), [])
 
 if __name__ == "__main__":
     unittest.main()
