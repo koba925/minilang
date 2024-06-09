@@ -121,6 +121,17 @@ class TestMinilang(unittest.TestCase):
                                     """), [0, 1, 2])
         self.assertEqual(get_error("while 1 print 2;"), "Expected `{`, found `print`.")
 
+    def test_fib(self):
+        self.assertEqual(get_output("""
+                                    var i = 0; var a = 1; var b = 0; var tmp = 0;
+                                    while i # 5 {
+                                        print a;
+                                        set tmp = a; set a = a + b; set b = tmp;
+                                        set i = i + 1;
+                                    }
+                                    print a;
+                                    """), [1, 1, 2, 3, 5, 8])
+
     def test_builtin_function(self):
         self.assertEqual(get_ast("print less(2 + 3, 2 * 3);"),
                          ["program", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
@@ -129,6 +140,17 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print less;"), ["<builtin>"])
         self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
 
+    def test_gcd(self):
+        self.assertEqual(get_output("""
+                                    var a = 36; var b = 24; var tmp = 0;
+                                    while b # 0 {
+                                        if less(a, b) {
+                                            set tmp = a; set a = b; set b = tmp;
+                                        }
+                                        set a = a - b;
+                                    }
+                                    print a;
+                                    """), [12])
 
     def test_expression_statement(self):
         self.assertEqual(get_ast("2 + 3;"), ["program", ["expr", ["+", 2, 3]]])
@@ -147,6 +169,19 @@ class TestMinilang(unittest.TestCase):
                                     print sum;
                                     """), [5, 9, "<func>"])
 
+    def test_fib2(self):
+        self.assertEqual(get_output("""
+                                    var fib = func(n) {
+                                        var i = 0; var a = 1; var b = 0; var tmp = 0;
+                                        while i # n {
+                                            print a;
+                                            set tmp = a; set a = a + b; set b = tmp;
+                                            set i = i + 1;
+                                        }
+                                    };
+                                    fib(6);
+                                    """), [1, 1, 2, 3, 5, 8])
+
     def test_return(self):
         self.assertEqual(get_output("print func() { return; }();"), [0])
         self.assertEqual(get_output("print func() { return 2; }();"), [2])
@@ -160,6 +195,41 @@ class TestMinilang(unittest.TestCase):
                                     print sum(4, 5);
                                     """), [5, 9])
         self.assertEqual(get_output("print func(b) { return func(a) { return a + b; }; }(2)(3);"), [5])
+
+    def test_gcd2(self):
+        self.assertEqual(get_output("""
+                                    var gcd = func(a, b) {
+                                        var tmp = 0;
+                                        while b # 0 {
+                                            if less(a, b) {
+                                                set tmp = a; set a = b; set b = tmp;
+                                            }
+                                            set a = a - b;
+                                        }
+                                        return a;
+                                    };
+                                    print gcd(36, 12);
+                                    """), [12])
+
+    def test_fib3(self):
+        self.assertEqual(get_output("""
+                                    var fib = func(n) {
+                                        if n = 1 { return 1; }
+                                        if n = 2 { return 1; }
+                                        return fib(n - 1) + fib(n - 2);
+                                    };
+                                    print fib(6);
+                                    """), [8])
+
+    def test_even_odd(self):
+        self.assertEqual(get_output("""
+                                    var is_even = func(a) { if a = 0 { return 1; } else { return is_odd(a - 1); } };
+                                    var is_odd = func(a) { if a = 0 { return 0; } else { return is_even(a - 1); } };
+                                    print is_even(3);
+                                    print is_odd(3);
+                                    print is_even(4);
+                                    print is_odd(4);
+                                    """), [0, 1, 1, 0])
 
     def test_closure(self):
         self.assertEqual(get_output("""
