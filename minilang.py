@@ -107,26 +107,16 @@ class Parser:
     def _parse_expression(self):
         return self._parse_equality()
 
-    def _parse_equality(self):
-        equality = self._parse_add_sub()
-        while (op := self._current_token) in ("=", "#"):
-            self._next_token()
-            equality = [op, equality, self._parse_add_sub()]
-        return equality
+    def _parse_equality(self): return self._parse_binop_left(("=", "#"), self._parse_add_sub)
+    def _parse_add_sub(self): return self._parse_binop_left(("+", "-"), self._parse_mult_div)
+    def _parse_mult_div(self): return self._parse_binop_left(("*", "/"), self._parse_power)
 
-    def _parse_add_sub(self):
-        add_sub = self._parse_mult_div()
-        while (op := self._current_token) in ("+", "-"):
+    def _parse_binop_left(self, ops, sub_element):
+        result = sub_element()
+        while (op := self._current_token) in ops:
             self._next_token()
-            add_sub = [op, add_sub, self._parse_mult_div()]
-        return add_sub
-
-    def _parse_mult_div(self):
-        mult_div = self._parse_power()
-        while (op := self._current_token) in ("*", "/"):
-            self._next_token()
-            mult_div = [op, mult_div, self._parse_power()]
-        return mult_div
+            result = [op, result, sub_element()]
+        return result
 
     def _parse_power(self):
         power = self._parse_call()
