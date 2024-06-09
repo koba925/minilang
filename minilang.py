@@ -104,8 +104,7 @@ class Parser:
         self._consume_token(";")
         return ["expr", expr]
 
-    def _parse_expression(self):
-        return self._parse_equality()
+    def _parse_expression(self): return self._parse_equality()
 
     def _parse_equality(self): return self._parse_binop_left(("=", "#"), self._parse_add_sub)
     def _parse_add_sub(self): return self._parse_binop_left(("+", "-"), self._parse_mult_div)
@@ -285,12 +284,28 @@ class Evaluator:
         return _get(self._env)
 
 if __name__ == "__main__":
-    evaluator = Evaluator()
-    while source := "\n".join(iter(lambda: input(": "), "")):
+    import sys
+
+    def run_from_file(filename):
+        evaluator = Evaluator()
         try:
-            ast = Parser(source).parse_program()
-            print(ast)
-            evaluator.clear_output()
-            evaluator.eval_statement(ast)
+            with open(sys.argv[1], "r") as f:
+                evaluator.eval_statement(Parser(f.read()).parse_program())
+        except AssertionError as e: print(e, file=sys.stderr)
+        print(*evaluator.output(), sep="\n")
+
+    def repl():
+        evaluator = Evaluator()
+        while source := "\n".join(iter(lambda: input(": "), "")):
+            try:
+                ast = Parser(source).parse_program()
+                print(ast)
+                evaluator.clear_output()
+                evaluator.eval_statement(ast)
+            except AssertionError as e: print(e)
             print(*evaluator.output(), sep="\n")
-        except AssertionError as e: print(e)
+
+    if len(sys.argv) > 1:
+        run_from_file(sys.argv[1])
+    else:
+        repl()
