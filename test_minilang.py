@@ -48,6 +48,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 24 / 4 / 2;"), [3])
         self.assertEqual(get_output("print 2 ^ 3 * 2;"), [16])
         self.assertEqual(get_output("print 2 * 2 ^ 3;"), [16])
+        self.assertEqual(get_error("print 2 / 0;"), "Division by zero.")
 
     def test_term(self):
         self.assertEqual(get_output("print 2 + 3;"), [5])

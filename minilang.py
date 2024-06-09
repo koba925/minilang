@@ -260,7 +260,9 @@ class Evaluator:
             case ["+", a, b]: return self._eval_expr(a) + self._eval_expr(b)
             case ["-", a, b]: return self._eval_expr(a) - self._eval_expr(b)
             case ["*", a, b]: return self._eval_expr(a) * self._eval_expr(b)
-            case ["/", a, b]: return self._eval_expr(a) // self._eval_expr(b)
+            case ["/", a, b]:
+                assert b != 0, f"Division by zero."
+                return self._eval_expr(a) // self._eval_expr(b)
             case ["^", a, b]: return self._eval_expr(a) ** self._eval_expr(b)
             case [op, *args]:
                 op, args = self._eval_expr(op), [self._eval_expr(arg) for arg in args]
