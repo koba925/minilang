@@ -203,7 +203,7 @@ class Evaluator:
 
     def _print_env(self):
         def _print(env, level):
-            print(level, { k:"<builtin>" if callable(v) else v for k, v in env.items() if k != "_parent" })
+            print(level, { k: self._to_str(v) for k, v in env.items() if k != "_parent" })
             if "_parent" in env: _print(env["_parent"], level + 1)
         _print(self._env, 0)
 
@@ -253,7 +253,13 @@ class Evaluator:
             self.eval_statement(body)
 
     def _eval_print(self, expr):
-        self._output.append(self._eval_expr(expr))
+        self._output.append(self._to_str(self._eval_expr(expr)))
+
+    def _to_str(self, value):
+        match value:
+            case v if callable(v): return "<builtin>"
+            case ["func", *_]: return "<func>"
+            case _: return value
 
     def _eval_expr(self, expr):
         match expr:

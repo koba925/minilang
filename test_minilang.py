@@ -126,13 +126,17 @@ class TestMinilang(unittest.TestCase):
                          ["program", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
         self.assertEqual(get_output("print less(2 + 3, 2 * 3);"), [1])
         self.assertEqual(get_output("print less(2 * 3, 2 + 3);"), [0])
+        self.assertEqual(get_output("print less;"), ["<builtin>"])
         self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
+
 
     def test_expression_statement(self):
         self.assertEqual(get_ast("2 + 3;"), ["program", ["expr", ["+", 2, 3]]])
         self.assertEqual(get_output("2 + 3;"), [])
 
     def test_user_function(self):
+        self.assertEqual(get_output("print func() {};"), ["<func>"])
+        self.assertEqual(get_output("print func() {}();"), [0])
         self.assertEqual(get_output("func() { print 2; }();"), [2])
         self.assertEqual(get_output("func(a, b) { print a + b; }(2, 3);"), [5])
         self.assertEqual(get_output("""
@@ -140,14 +144,14 @@ class TestMinilang(unittest.TestCase):
                                         print a + b;
                                     };
                                     sum(2, 3); sum(4, 5);
-                                    """), [5, 9])
+                                    print sum;
+                                    """), [5, 9, "<func>"])
 
     def test_return(self):
-        self.assertEqual(get_output("func() { print 1; return; print 2; }();"), [1])
-        self.assertEqual(get_output("print func() {}();"), [0])
         self.assertEqual(get_output("print func() { return; }();"), [0])
         self.assertEqual(get_output("print func() { return 2; }();"), [2])
         self.assertEqual(get_output("print func(a, b) { return a + b; }(2, 3);"), [5])
+        self.assertEqual(get_output("func() { print 1; return; print 2; }();"), [1])
         self.assertEqual(get_output("""
                                     var sum = func(a, b) {
                                         return a + b;
