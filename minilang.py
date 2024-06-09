@@ -210,8 +210,10 @@ class Evaluator:
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _eval_program(self, statements):
-        for statement in statements:
-            self.eval_statement(statement)
+        try:
+            for statement in statements: self.eval_statement(statement)
+        except Return:
+            assert False, "Return from top level."
 
     def _eval_block(self, statements):
         parent_env = self._env
