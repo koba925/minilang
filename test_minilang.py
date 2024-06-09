@@ -169,6 +169,8 @@ class TestMinilang(unittest.TestCase):
                                     sum(2, 3); sum(4, 5);
                                     print sum;
                                     """), [5, 9, "<func>"])
+        self.assertEqual(get_error("func() {}(1);"), "Parameter's count doesn't match.")
+        self.assertEqual(get_error("func(a, b) {}(1);"), "Parameter's count doesn't match.")
 
     def test_fib2(self):
         self.assertEqual(get_output("""

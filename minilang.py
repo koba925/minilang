@@ -271,11 +271,13 @@ class Evaluator:
                 return op(*args) if callable(op) else self._apply(op, args)
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
-    def _apply(self, op, args):
+    def _apply(self, func, args):
         parent_env = self._env
-        self._env = dict(zip(op[1], args)) | { "_parent": op[3] }
+        [_, parameters, body, env] = func
+        assert len(parameters) == len(args), f"Parameter's count doesn't match."
+        self._env = dict(zip(func[1], args)) | { "_parent": env }
         value = 0
-        try: self.eval_statement(op[2])
+        try: self.eval_statement(body)
         except Return as ret: value = ret.value
         self._env = parent_env
         return value
