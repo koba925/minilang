@@ -140,6 +140,8 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print less(2 * 3, 2 + 3);"), [0])
         self.assertEqual(get_output("print less;"), ["<builtin>"])
         self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
+        self.assertEqual(get_error("less(1);"), "Parameter's count doesn't match.")
+        self.assertEqual(get_error("less(1, 2, 3);"), "Parameter's count doesn't match.")
 
     def test_gcd(self):
         self.assertEqual(get_output("""

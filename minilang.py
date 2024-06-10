@@ -179,6 +179,8 @@ class Parser:
 class Return(Exception):
     def __init__(self, value): self.value = value
 
+import inspect
+
 class Evaluator:
     def __init__(self):
         self._output = []
@@ -266,12 +268,16 @@ class Evaluator:
                 assert b != 0, f"Division by zero."
                 return self._eval_expr(a) // self._eval_expr(b)
             case ["^", a, b]: return self._eval_expr(a) ** self._eval_expr(b)
-            case [op, *args]:
-                op, args = self._eval_expr(op), [self._eval_expr(arg) for arg in args]
-                return op(*args) if callable(op) else self._apply(op, args)
+            case [func, *args]:
+                return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
     def _apply(self, func, args):
+        if callable(func):
+            parameters = inspect.signature(func).parameters
+            assert len(parameters) == len(args), f"Parameter's count doesn't match."
+            return func(*args)
+
         parent_env = self._env
         [_, parameters, body, env] = func
         assert len(parameters) == len(args), f"Parameter's count doesn't match."
