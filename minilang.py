@@ -94,8 +94,10 @@ class Parser:
         self._next_token()
         name = self._parse_primary()
         assert isinstance(name, str),  f"Expected a name, found `{name}`."
-        self._consume_token("=")
-        value = self._parse_expression()
+        value = 0
+        if op == "set" or self._current_token != ";":
+            self._consume_token("=")
+            value = self._parse_expression()
         self._consume_token(";")
         return [op, name, value]
 

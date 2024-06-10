@@ -80,7 +80,7 @@ class TestMinilang(unittest.TestCase):
     def test_var(self):
         self.assertEqual(get_output("var a = 1 + 2; print a; set a = a + 3; print a;"), [3, 6])
         self.assertEqual(get_output("var a = 1; var b = 2; print a; print b;"), [1, 2])
-        self.assertEqual(get_error("var a;"), "Expected `=`, found `;`.")
+        self.assertEqual(get_output("var a; print a;"), [0])
         self.assertEqual(get_error("var 1 = 1;"), "Expected a name, found `1`.")
         self.assertEqual(get_error("var a = 1; var a = 1;"), "`a` already defined.")
         self.assertEqual(get_error("set a;"), "Expected `=`, found `;`.")
