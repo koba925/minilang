@@ -179,12 +179,20 @@ class Parser:
 class Return(Exception):
     def __init__(self, value): self.value = value
 
-import inspect
+import inspect , operator as op
+
+def div(a, b):
+    assert b != 0, f"Division by zero."
+    return a // b
 
 class Evaluator:
     def __init__(self):
         self._output = []
         self._env: dict = {
+            "+": op.add, "-": op.sub, "*": op.mul, "/": div,
+            "^": op.pow,
+            "=": lambda a, b: 1 if a == b else 0,
+            "#": lambda a, b: 1 if a != b else 0,
             "less": lambda a, b: 1 if a < b else 0,
             "print_env": self._print_env
         }
@@ -259,15 +267,6 @@ class Evaluator:
             case int(value): return value
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
-            case ["=", a, b]: return 1 if self._eval_expr(a) == self._eval_expr(b) else 0
-            case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
-            case ["+", a, b]: return self._eval_expr(a) + self._eval_expr(b)
-            case ["-", a, b]: return self._eval_expr(a) - self._eval_expr(b)
-            case ["*", a, b]: return self._eval_expr(a) * self._eval_expr(b)
-            case ["/", a, b]:
-                assert b != 0, f"Division by zero."
-                return self._eval_expr(a) // self._eval_expr(b)
-            case ["^", a, b]: return self._eval_expr(a) ** self._eval_expr(b)
             case [func, *args]:
                 return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
