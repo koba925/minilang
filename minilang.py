@@ -4,15 +4,17 @@ class Scanner:
         self._current_position = 0
 
     def next_token(self):
-        while self._current_char().isspace(): self._current_position += 1
+        while True:
+            match self._current_char():
+                case c if c.isspace(): self._current_position += 1
+                case "!":
+                    while self._current_char() not in ("\r", "\n", "$EOF"):
+                        self._current_position += 1
+                case _: break
 
         start = self._current_position
         match self._current_char():
             case "$EOF": return "$EOF"
-            case "!":
-                while self._current_char() not in ("\r", "\n", "$EOF"):
-                    self._current_position += 1
-                return self.next_token()
             case c if c.isalpha():
                 while self._current_char().isalnum() or self._current_char() == "_":
                     self._current_position += 1
