@@ -248,5 +248,13 @@ class TestMinilang(unittest.TestCase):
                                     print add_2(3);
                                     """), [5])
 
+    def test_comments(self):
+        self.assertEqual(get_output("! This is a comment"), [])
+        self.assertEqual(get_output("""
+                                    !!! Test of comments !!!
+                                    print 1; ! This is a comment!
+                                    ! print 2; This will not be excecuted.
+                                    """), [1])
+
 if __name__ == "__main__":
     unittest.main()
