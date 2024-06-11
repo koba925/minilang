@@ -274,5 +274,31 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1--1;"), [2])
         self.assertEqual(get_output("var a = 1; print -a;"), [-1])
 
+    def test_and_or(self):
+        self.assertEqual(get_output("print 1 = 1 & 2 = 2;"), [1])
+        self.assertEqual(get_output("print 1 = 1 & 2 # 2;"), [0])
+        self.assertEqual(get_output("print 1 # 1 & 1 / 0;"), [0])
+        self.assertEqual(get_output("print 1 # 1 | 2 = 2;"), [1])
+        self.assertEqual(get_output("print 1 # 1 | 2 # 2;"), [0])
+        self.assertEqual(get_output("print 1 = 1 | 1 / 0;"), [1])
+
+        self.assertEqual(get_output("print 2 & 0;"), [0])
+        self.assertEqual(get_output("print 1 & 2;"), [2])
+        self.assertEqual(get_output("print 2 | 1;"), [2])
+        self.assertEqual(get_output("print 0 | 2;"), [2])
+
+        self.assertEqual(get_ast("print 1 & 1 & 0;"), ["program", ["print", ["&", ["&", 1, 1], 0]]])
+        self.assertEqual(get_output("print 1 & 1 & 0;"), [0])
+        self.assertEqual(get_output("print 1 & 0 & 1 / 0;"), [0])
+
+        self.assertEqual(get_ast("print 0 | 0 | 1;"), ["program", ["print", ["|", ["|", 0, 0], 1]]])
+        self.assertEqual(get_output("print 0 | 0 | 1;"), [1])
+        self.assertEqual(get_output("print 0 | 1 | 1 / 0;"), [1])
+
+        self.assertEqual(get_ast("print 1 | 1 & 0;"), ["program", ["print", ["|", 1, ["&", 1, 0]]]])
+        self.assertEqual(get_ast("print 1 & 1 | 0;"), ["program", ["print", ["|", ["&", 1, 1], 0]]])
+        self.assertEqual(get_output("print 1 | 1 & 0;"), [1])
+        self.assertEqual(get_output("print 1 & 1 | 0;"), [1])
+
 if __name__ == "__main__":
     unittest.main()

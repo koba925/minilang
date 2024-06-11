@@ -112,8 +112,10 @@ class Parser:
         self._consume_token(";")
         return ["expr", expr]
 
-    def _parse_expression(self): return self._parse_equality()
+    def _parse_expression(self): return self._parse_or()
 
+    def _parse_or(self): return self._parse_binop_left(("|",), self._parse_and)
+    def _parse_and(self): return self._parse_binop_left(("&",), self._parse_equality)
     def _parse_equality(self): return self._parse_binop_left(("=", "#"), self._parse_add_sub)
     def _parse_add_sub(self): return self._parse_binop_left(("+", "-"), self._parse_mult_div)
     def _parse_mult_div(self): return self._parse_binop_left(("*", "/"), self._parse_power)
@@ -207,6 +209,9 @@ def _calc(op, a, b):
     assert isinstance(a, int) and isinstance(b, int), f"Operands must be integers."
     return op(a, b)
 
+def _and(a, b):
+    return b if a != 0 else 0
+
 class Evaluator:
     def __init__(self):
         self._output = []
@@ -293,6 +298,8 @@ class Evaluator:
             case int(value): return value
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
+            case ["&", a, b]: return self._eval_and(a, b)
+            case ["|", a, b]: return self._eval_or(a, b)
             case [func, *args]:
                 return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
@@ -312,6 +319,14 @@ class Evaluator:
         except Return as ret: value = ret.value
         self._env = parent_env
         return value
+
+    def _eval_and(self, a, b):
+        a = self._eval_expr(a)
+        return self._eval_expr(b) if a != 0 else a
+
+    def _eval_or(self, a, b):
+        a = self._eval_expr(a)
+        return self._eval_expr(b) if a == 0 else a
 
     def _eval_variable(self, name):
         def _get(env):
