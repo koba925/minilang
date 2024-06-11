@@ -38,6 +38,8 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 2 ^ 3;"), [8])
         self.assertEqual(get_ast("print 2 ^ 2 ^ 3;"), ["program", ["print", ["^", 2, ["^", 2, 3]]]])
         self.assertEqual(get_output("print 2 ^ 2 ^ 3;"), [256])
+        self.assertEqual(get_error("print 2 ^ func() {};"), "Operands must be integers.")
+        self.assertEqual(get_error("print func() {} ^ 2;"), "Operands must be integers.")
 
     def test_factor(self):
         self.assertEqual(get_output("print 2 * 3;"), [6])
@@ -49,6 +51,8 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 2 ^ 3 * 2;"), [16])
         self.assertEqual(get_output("print 2 * 2 ^ 3;"), [16])
         self.assertEqual(get_error("print 2 / 0;"), "Division by zero.")
+        self.assertEqual(get_error("print 2 * func() {};"), "Operands must be integers.")
+        self.assertEqual(get_error("print func() {} / 2;"), "Operands must be integers.")
 
     def test_term(self):
         self.assertEqual(get_output("print 2 + 3;"), [5])
@@ -61,6 +65,8 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 2 + 3 * 4;"), [14])
         self.assertEqual(get_ast("print 2 * 3 + 4;"), ["program", ["print", ["+", ["*", 2, 3], 4]]])
         self.assertEqual(get_output("print 2 * 3 + 4;"), [10])
+        self.assertEqual(get_error("print 2 + func() {};"), "Operands must be integers.")
+        self.assertEqual(get_error("print func() {} - 2;"), "Operands must be integers.")
 
     def test_equality(self):
         self.assertEqual(get_output("print 2 = 2;"), [1])
@@ -70,6 +76,12 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_ast("print 1 = 2 = 2;"), ["program", ["print", ["=", ["=", 1, 2], 2]]])
         self.assertEqual(get_output("print 1 = 2 = 2;"), [0])
         self.assertEqual(get_output("print 1 + 2 = 6 - 3;"), [1])
+        self.assertEqual(get_output("print func() {} = 0;"), [0])
+        self.assertEqual(get_output("print func() {} # 0;"), [1])
+        self.assertEqual(get_output("print func(a) { return a; } = func(a) { return a; };"), [1])
+        self.assertEqual(get_output("print func(a) { return a; } = func(b) { return b; };"), [0])
+        self.assertEqual(get_output("print func(a) { return a; } # func(a) { return a; };"), [0])
+        self.assertEqual(get_output("print func(a) { return a; } # func(b) { return b; };"), [1])
 
     def test_grouping(self):
         self.assertEqual(get_ast("print (2 + 3) * 4;"), ["program", ["print", ["*", ["+", 2, 3], 4]]])
@@ -255,6 +267,12 @@ class TestMinilang(unittest.TestCase):
                                     print 1; ! This is a comment!
                                     ! print 2; This will not be excecuted.
                                     """), [1])
+
+    def test_unary_minus(self):
+        self.assertEqual(get_output("print -1;"), [-1])
+        self.assertEqual(get_output("print --1;"), [1])
+        self.assertEqual(get_output("print 1--1;"), [2])
+        self.assertEqual(get_output("var a = 1; print -a;"), [-1])
 
 if __name__ == "__main__":
     unittest.main()

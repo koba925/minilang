@@ -126,10 +126,16 @@ class Parser:
         return result
 
     def _parse_power(self):
-        power = self._parse_call()
+        power = self._parse_unary()
         if self._current_token != "^": return power
         self._next_token()
         return ["^", power, self._parse_power()]
+
+    def _parse_unary(self):
+        if self._current_token == "-":
+            self._next_token()
+            return ["--", self._parse_unary()]
+        return self._parse_call()
 
     def _parse_call(self):
         call = self._parse_primary()
@@ -189,19 +195,31 @@ class Return(Exception):
 
 import inspect , operator as op
 
-def div(a, b):
+def _unary_minus(a):
+    assert isinstance(a, int), f"Operand must be integer."
+    return -a
+
+def _div(a, b):
     assert b != 0, f"Division by zero."
     return a // b
+
+def _calc(op, a, b):
+    assert isinstance(a, int) and isinstance(b, int), f"Operands must be integers."
+    return op(a, b)
 
 class Evaluator:
     def __init__(self):
         self._output = []
         self._env: dict = {
-            "+": op.add, "-": op.sub, "*": op.mul, "/": div,
-            "^": op.pow,
+            "--": _unary_minus,
+            "+": lambda a, b: _calc(op.add, a, b),
+            "-": lambda a, b: _calc(op.sub, a, b),
+            "*": lambda a, b: _calc(op.mul, a, b),
+            "/": lambda a, b: _calc(_div, a, b),
+            "^": lambda a, b: _calc(op.pow, a, b),
             "=": lambda a, b: 1 if a == b else 0,
             "#": lambda a, b: 1 if a != b else 0,
-            "less": lambda a, b: 1 if a < b else 0,
+            "less": lambda a, b: _calc(lambda a, b: 1 if a < b else 0, a, b),
             "print_env": self._print_env
         }
 
