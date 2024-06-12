@@ -300,5 +300,27 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1 | 1 & 0;"), [1])
         self.assertEqual(get_output("print 1 & 1 | 0;"), [1])
 
+
+        self.assertEqual(get_output("""
+                                    var n = 0;
+                                    while 1 {
+                                        if n = 3 { break; }
+                                        print n;
+                                        set n = n + 1;
+                                    }
+                                    print 10;
+                                    """), [0, 1, 2, 10])
+
+    def test_continue(self):
+        self.assertEqual(get_output("""
+                                    var n = 0;
+                                    while n # 4 {
+                                        set n = n + 1;
+                                        if n = 2 { continue; }
+                                        print n;
+                                    }
+                                    print 10;
+                                    """), [1, 3, 4, 10])
+
 if __name__ == "__main__":
     unittest.main()
