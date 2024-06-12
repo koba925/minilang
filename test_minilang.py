@@ -331,5 +331,11 @@ class TestMinilang(unittest.TestCase):
                                     print sum(4, 5);
                                     """), [5, 9])
 
+    def test_elif(self):
+        self.assertEqual(get_output("if 1 { print 0; } elif 1 {print 1; } elif 1 { print 2; } else { print 3; }"), [0])
+        self.assertEqual(get_output("if 0 { print 0; } elif 1 {print 1; } elif 1 { print 2; } else { print 3; }"), [1])
+        self.assertEqual(get_output("if 0 { print 0; } elif 0 {print 1; } elif 1 { print 2; } else { print 3; }"), [2])
+        self.assertEqual(get_output("if 0 { print 0; } elif 0 {print 1; } elif 0 { print 2; } else { print 3; }"), [3])
+
 if __name__ == "__main__":
     unittest.main()

@@ -84,7 +84,9 @@ class Parser:
         self._check_token("{")
         conseq = self._parse_block()
         alt = ["block"]
-        if self._current_token == "else":
+        if self._current_token == "elif":
+            alt = self._parse_if()
+        elif self._current_token == "else":
             self._next_token()
             self._check_token("{")
             alt = self._parse_block()
