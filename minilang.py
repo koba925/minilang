@@ -53,6 +53,7 @@ class Parser:
             case "while": return self._parse_while()
             case "break": return self._parse_break()
             case "continue": return self._parse_continue()
+            case "def": return self._parse_def()
             case "return": return self._parse_return()
             case "print": return self._parse_print()
             case _: return self._parse_expression_statement()
@@ -64,6 +65,18 @@ class Parser:
             block.append(self._parse_statement())
         self._next_token()
         return block
+
+    def _parse_var_set(self):
+        op = self._current_token
+        self._next_token()
+        name = self._parse_primary()
+        assert isinstance(name, str),  f"Expected a name, found `{name}`."
+        value = 0
+        if op == "set" or self._current_token != ";":
+            self._consume_token("=")
+            value = self._parse_expression()
+        self._consume_token(";")
+        return [op, name, value]
 
     def _parse_if(self):
         self._next_token()
@@ -94,24 +107,20 @@ class Parser:
         self._consume_token(";")
         return ["continue"]
 
+    def _parse_def(self):
+        self._next_token()
+        name = self._parse_primary()
+        assert isinstance(name, str),  f"Expected a name, found `{name}`."
+        params = self._parse_parameters()
+        body = self._parse_block()
+        return ["var", name, ["func", params, body]]
+
     def _parse_return(self):
         self._next_token()
         value = 0
         if self._current_token != ";": value = self._parse_expression()
         self._consume_token(";")
         return ["return", value]
-
-    def _parse_var_set(self):
-        op = self._current_token
-        self._next_token()
-        name = self._parse_primary()
-        assert isinstance(name, str),  f"Expected a name, found `{name}`."
-        value = 0
-        if op == "set" or self._current_token != ";":
-            self._consume_token("=")
-            value = self._parse_expression()
-        self._consume_token(";")
-        return [op, name, value]
 
     def _parse_print(self):
         self._next_token()
@@ -179,6 +188,11 @@ class Parser:
 
     def _parse_func(self):
         self._next_token()
+        params = self._parse_parameters()
+        body = self._parse_block()
+        return ["func", params, body]
+
+    def _parse_parameters(self):
         self._consume_token("(")
         params = []
         while self._current_token != ")":
@@ -189,8 +203,7 @@ class Parser:
             if self._current_token != ")":
                 self._consume_token(",")
         self._consume_token(")")
-        body = self._parse_block()
-        return ["func", params, body]
+        return params
 
     def _check_token(self, expected_token):
         assert self._current_token == expected_token, \

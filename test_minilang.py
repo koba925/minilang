@@ -300,7 +300,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1 | 1 & 0;"), [1])
         self.assertEqual(get_output("print 1 & 1 | 0;"), [1])
 
-
+    def test_break(self):
         self.assertEqual(get_output("""
                                     var n = 0;
                                     while 1 {
@@ -321,6 +321,15 @@ class TestMinilang(unittest.TestCase):
                                     }
                                     print 10;
                                     """), [1, 3, 4, 10])
+
+    def test_def(self):
+        self.assertEqual(get_output("""
+                                    def sum(a, b) {
+                                        return a + b;
+                                    }
+                                    print sum(2, 3);
+                                    print sum(4, 5);
+                                    """), [5, 9])
 
 if __name__ == "__main__":
     unittest.main()
