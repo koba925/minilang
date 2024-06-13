@@ -337,5 +337,8 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("if 0 { print 0; } elif 0 {print 1; } elif 1 { print 2; } else { print 3; }"), [2])
         self.assertEqual(get_output("if 0 { print 0; } elif 0 {print 1; } elif 0 { print 2; } else { print 3; }"), [3])
 
+    def test_for(self):
+        self.assertEqual(get_output("for i = 0; i # 5; i = i + 1 { print i; }"), [0, 1, 2, 3, 4])
+
 if __name__ == "__main__":
     unittest.main()
