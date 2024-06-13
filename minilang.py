@@ -177,7 +177,7 @@ class Parser:
     def _parse_unary(self):
         if self._current_token == "-":
             self._next_token()
-            return ["--", self._parse_unary()]
+            return ["-", self._parse_unary()]
         return self._parse_call()
 
     def _parse_call(self):
@@ -256,21 +256,10 @@ def _calc(op, a, b):
     assert isinstance(a, int) and isinstance(b, int), f"Operands must be integers."
     return op(a, b)
 
-def _and(a, b):
-    return b if a != 0 else 0
-
 class Evaluator:
     def __init__(self):
         self._output = []
         self._env: dict = {
-            "--": _unary_minus,
-            "+": lambda a, b: _calc(op.add, a, b),
-            "-": lambda a, b: _calc(op.sub, a, b),
-            "*": lambda a, b: _calc(op.mul, a, b),
-            "/": lambda a, b: _calc(_div, a, b),
-            "^": lambda a, b: _calc(op.pow, a, b),
-            "=": lambda a, b: 1 if a == b else 0,
-            "#": lambda a, b: 1 if a != b else 0,
             "less": lambda a, b: _calc(lambda a, b: 1 if a < b else 0, a, b),
             "print_env": self._print_env
         }
@@ -362,6 +351,14 @@ class Evaluator:
             case int(value): return value
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
+            case ["-", a]: return _unary_minus(self._eval_expr(a))
+            case ["^", a, b]: return _calc(op.pow, self._eval_expr(a), self._eval_expr(b))
+            case ["*", a, b]: return _calc(op.mul, self._eval_expr(a), self._eval_expr(b))
+            case ["/", a, b]: return _calc(_div, self._eval_expr(a), self._eval_expr(b))
+            case ["+", a, b]: return _calc(op.add,  self._eval_expr(a), self._eval_expr(b))
+            case ["-", a, b]: return _calc(op.sub,  self._eval_expr(a), self._eval_expr(b))
+            case ["=", a, b]: return 1 if self._eval_expr(a) == self._eval_expr(b) else 0
+            case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
             case ["&", a, b]: return self._eval_and(a, b)
             case ["|", a, b]: return self._eval_or(a, b)
             case [func, *args]:
