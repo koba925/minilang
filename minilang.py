@@ -95,10 +95,10 @@ class Parser:
 
     def _parse_while(self):
         self._next_token()
-        condtion = self._parse_expression()
+        cond = self._parse_expression()
         self._check_token("{")
         body = self._parse_block()
-        return ["while", condtion, body]
+        return ["while", cond, body]
 
     def _parse_for(self):
         self._next_token()
@@ -107,7 +107,7 @@ class Parser:
         self._consume_token("=")
         init_exp = self._parse_expression()
         self._consume_token(";")
-        condtion = self._parse_expression()
+        cond = self._parse_expression()
         self._consume_token(";")
         update_name = self._parse_primary()
         assert isinstance(update_name, str),  f"Expected a name, found `{update_name}`."
@@ -115,8 +115,7 @@ class Parser:
         update_exp = self._parse_expression()
         self._check_token("{")
         body = self._parse_block()
-        body.append(["set", update_name, update_exp])
-        return ["block", ["var", init_name, init_exp], ["while", condtion, body]]
+        return ["for", init_name, init_exp, cond, update_name, update_exp, body]
 
     def _parse_break(self):
         self._next_token()
@@ -293,6 +292,8 @@ class Evaluator:
             case ["set", name, value]: self._eval_set(name, value)
             case ["if", cond, conseq, alt]: self._eval_if(cond, conseq, alt)
             case ["while", cond, body]: self._eval_while(cond, body)
+            case ["for", init_name, init_exp, cond, update_name, update_exp, body]:
+                self._eval_for(init_name, init_exp, cond, update_name, update_exp, body)
             case ["break"]: raise Break()
             case ["continue"]: raise Continue()
             case ["return", value]: raise Return(self._eval_expr(value))
@@ -334,6 +335,17 @@ class Evaluator:
         while self._eval_expr(cond) != 0:
             try: self.eval_statement(body)
             except Continue: continue
+            except Break: break
+
+    def _eval_for(self, init_name, init_exp, cond, update_name, update_exp, body):
+        self._eval_var(init_name, init_exp)
+        while self._eval_expr(cond) != 0:
+            try:
+                self.eval_statement(body)
+                self._eval_set(update_name, update_exp)
+            except Continue:
+                self._eval_set(update_name, update_exp)
+                continue
             except Break: break
 
     def _eval_print(self, expr):
