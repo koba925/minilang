@@ -342,5 +342,19 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("for i = 0; i # 5; i = i + 1 { if i = 3 { break; } print i; }"), [0, 1, 2])
         self.assertEqual(get_output("for i = 0; i # 5; i = i + 1 { if i = 2 { continue; } print i; }"), [0, 1, 3, 4])
 
+    def test_comparison(self):
+        self.assertEqual(get_output("print 2 + 3 < 2 * 3;"), [1])
+        self.assertEqual(get_output("print 2 * 3 < 2 * 3;"), [0])
+        self.assertEqual(get_output("print 2 * 3 < 2 + 3;"), [0])
+        self.assertEqual(get_output("print 2 + 3 <= 2 * 3;"), [1])
+        self.assertEqual(get_output("print 2 * 3 <= 2 * 3;"), [1])
+        self.assertEqual(get_output("print 2 * 3 <= 2 + 3;"), [0])
+        self.assertEqual(get_output("print 2 * 3 > 2 + 3;"), [1])
+        self.assertEqual(get_output("print 2 * 3 > 2 * 3;"), [0])
+        self.assertEqual(get_output("print 2 + 3 > 2 * 3;"), [0])
+        self.assertEqual(get_output("print 2 * 3 >= 2 + 3;"), [1])
+        self.assertEqual(get_output("print 2 * 3 >= 2 * 3;"), [1])
+        self.assertEqual(get_output("print 2 + 3 >= 2 * 3;"), [0])
+
 if __name__ == "__main__":
     unittest.main()

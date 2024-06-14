@@ -23,6 +23,11 @@ class Scanner:
                 while self._current_char().isnumeric():
                     self._current_position += 1
                 return int(self._source[start:self._current_position])
+            case "<" | ">":
+                self._current_position += 1
+                if self._current_char() == "=":
+                    self._current_position += 1
+                return self._source[start:self._current_position]
             case _:
                 self._current_position += 1
                 return self._source[start:self._current_position]
@@ -157,7 +162,8 @@ class Parser:
 
     def _parse_or(self): return self._parse_binop_left(("|",), self._parse_and)
     def _parse_and(self): return self._parse_binop_left(("&",), self._parse_equality)
-    def _parse_equality(self): return self._parse_binop_left(("=", "#"), self._parse_add_sub)
+    def _parse_equality(self): return self._parse_binop_left(("=", "#"), self._parse_comparison)
+    def _parse_comparison(self): return self._parse_binop_left((">", ">=", "<", "<="), self._parse_add_sub)
     def _parse_add_sub(self): return self._parse_binop_left(("+", "-"), self._parse_mult_div)
     def _parse_mult_div(self): return self._parse_binop_left(("*", "/"), self._parse_power)
 
@@ -357,6 +363,10 @@ class Evaluator:
             case ["/", a, b]: return _calc(_div, self._eval_expr(a), self._eval_expr(b))
             case ["+", a, b]: return _calc(op.add,  self._eval_expr(a), self._eval_expr(b))
             case ["-", a, b]: return _calc(op.sub,  self._eval_expr(a), self._eval_expr(b))
+            case ["<", a, b]: return 1 if self._eval_expr(a) < self._eval_expr(b) else 0
+            case ["<=", a, b]: return 1 if self._eval_expr(a) <= self._eval_expr(b) else 0
+            case [">", a, b]: return 1 if self._eval_expr(a) > self._eval_expr(b) else 0
+            case [">=", a, b]: return 1 if self._eval_expr(a) >= self._eval_expr(b) else 0
             case ["=", a, b]: return 1 if self._eval_expr(a) == self._eval_expr(b) else 0
             case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
             case ["&", a, b]: return self._eval_and(a, b)
