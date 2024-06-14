@@ -356,5 +356,9 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 2 * 3 >= 2 * 3;"), [1])
         self.assertEqual(get_output("print 2 + 3 >= 2 * 3;"), [0])
 
+    def test_while_then(self):
+        self.assertEqual(get_output("while 0 {} then { print 2; }"), [2])
+        self.assertEqual(get_output("while 1 { break; } then { print 2; }"), [])
+
 if __name__ == "__main__":
     unittest.main()

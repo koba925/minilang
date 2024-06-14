@@ -103,7 +103,12 @@ class Parser:
         cond = self._parse_expression()
         self._check_token("{")
         body = self._parse_block()
-        return ["while", cond, body]
+        then = ["block"]
+        if self._current_token == "then":
+            self._next_token()
+            self._check_token("{")
+            then = self._parse_block()
+        return ["while", cond, body, then]
 
     def _parse_for(self):
         self._next_token()
@@ -286,7 +291,7 @@ class Evaluator:
             case ["var", name, value]: self._eval_var(name, value)
             case ["set", name, value]: self._eval_set(name, value)
             case ["if", cond, conseq, alt]: self._eval_if(cond, conseq, alt)
-            case ["while", cond, body]: self._eval_while(cond, body)
+            case ["while", cond, body, then]: self._eval_while(cond, body, then)
             case ["for", init_name, init_exp, cond, update_name, update_exp, body]:
                 self._eval_for(init_name, init_exp, cond, update_name, update_exp, body)
             case ["break"]: raise Break()
@@ -326,11 +331,13 @@ class Evaluator:
         else:
             self.eval_statement(alt)
 
-    def _eval_while(self, cond, body):
+    def _eval_while(self, cond, body, then):
         while self._eval_expr(cond) != 0:
             try: self.eval_statement(body)
             except Continue: continue
             except Break: break
+        else:
+            self.eval_statement(then)
 
     def _eval_for(self, init_name, init_exp, cond, update_name, update_exp, body):
         self._eval_var(init_name, init_exp)
