@@ -164,7 +164,16 @@ class Parser:
         self._consume_token(";")
         return ["expr", expr]
 
-    def _parse_expression(self): return self._parse_or()
+    def _parse_expression(self): return self._perse_ternary()
+
+    def _perse_ternary(self):
+        cond = self._parse_or()
+        if self._current_token != "?": return cond
+        self._next_token()
+        conseq = self._perse_ternary()
+        self._consume_token(":")
+        alt = self._perse_ternary()
+        return ["?", cond, conseq, alt]
 
     def _parse_or(self): return self._parse_binop_left(("|",), self._parse_and)
     def _parse_and(self): return self._parse_binop_left(("&",), self._parse_equality)
@@ -372,6 +381,7 @@ class Evaluator:
             case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
             case ["&", a, b]: return self._eval_and(a, b)
             case ["|", a, b]: return self._eval_or(a, b)
+            case ["?", cond, conseq, alt]: return self._eval_ternary(cond, conseq, alt)
             case [func, *args]:
                 return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
@@ -417,6 +427,10 @@ class Evaluator:
     def _eval_or(self, a, b):
         a = self._eval_expr(a)
         return self._eval_expr(b) if a == 0 else a
+
+    def _eval_ternary(self, cond, conseq, alt):
+        cond = self._eval_expr(cond)
+        return self._eval_expr(conseq) if cond != 0 else self._eval_expr(alt)
 
     def _eval_variable(self, name):
         def _get(env):
