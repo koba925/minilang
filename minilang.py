@@ -255,23 +255,11 @@ class Return(Exception):
 
 import inspect , operator as op
 
-def _unary_minus(a):
-    assert isinstance(a, int), f"Operand must be integer."
-    return -a
-
-def _div(a, b):
-    assert b != 0, f"Division by zero."
-    return a // b
-
-def _calc(op, a, b):
-    assert isinstance(a, int) and isinstance(b, int), f"Operands must be integers."
-    return op(a, b)
-
 class Evaluator:
     def __init__(self):
         self._output = []
         self._env: dict = {
-            "less": lambda a, b: _calc(lambda a, b: 1 if a < b else 0, a, b),
+            "less": lambda a, b: self._calc(lambda a, b: 1 if a < b else 0, a, b),
             "print_env": self._print_env
         }
 
@@ -357,23 +345,25 @@ class Evaluator:
         match value:
             case v if callable(v): return "<builtin>"
             case ["func", *_]: return "<func>"
+            case None: return "null"
             case _: return value
 
     def _eval_expr(self, expr):
         match expr:
             case int(value): return value
+            case "null": return None
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
-            case ["-", a]: return _unary_minus(self._eval_expr(a))
-            case ["^", a, b]: return _calc(op.pow, self._eval_expr(a), self._eval_expr(b))
-            case ["*", a, b]: return _calc(op.mul, self._eval_expr(a), self._eval_expr(b))
-            case ["/", a, b]: return _calc(_div, self._eval_expr(a), self._eval_expr(b))
-            case ["+", a, b]: return _calc(op.add,  self._eval_expr(a), self._eval_expr(b))
-            case ["-", a, b]: return _calc(op.sub,  self._eval_expr(a), self._eval_expr(b))
-            case ["<", a, b]: return 1 if self._eval_expr(a) < self._eval_expr(b) else 0
-            case ["<=", a, b]: return 1 if self._eval_expr(a) <= self._eval_expr(b) else 0
-            case [">", a, b]: return 1 if self._eval_expr(a) > self._eval_expr(b) else 0
-            case [">=", a, b]: return 1 if self._eval_expr(a) >= self._eval_expr(b) else 0
+            case ["-", a]: return self._unary_minus(a)
+            case ["^", a, b]: return self._apply_calc(op.pow, a, b)
+            case ["*", a, b]: return self._apply_calc(op.mul, a, b)
+            case ["/", a, b]: return self._apply_calc(self._div, a, b)
+            case ["+", a, b]: return self._apply_calc(op.add, a, b)
+            case ["-", a, b]: return self._apply_calc(op.sub, a, b)
+            case ["<", a, b]: return 1 if self._apply_calc(op.lt, a, b) else 0
+            case ["<=", a, b]: return 1 if self._apply_calc(op.le, a, b) else 0
+            case [">", a, b]: return 1 if self._apply_calc(op.gt, a, b) else 0
+            case [">=", a, b]: return 1 if self._apply_calc(op.ge, a, b) else 0
             case ["=", a, b]: return 1 if self._eval_expr(a) == self._eval_expr(b) else 0
             case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
             case ["&", a, b]: return self._eval_and(a, b)
@@ -381,6 +371,24 @@ class Evaluator:
             case [func, *args]:
                 return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
+
+
+    def _unary_minus(self, a):
+        a = self._eval_expr(a)
+        assert isinstance(a, int), f"Operand must be integer."
+        return -a
+
+    def _div(self, a, b):
+        assert b != 0, f"Division by zero."
+        return a // b
+
+    def _apply_calc(self, op, a, b):
+        a, b = self._eval_expr(a), self._eval_expr(b)
+        return self._calc(op, a, b)
+
+    def _calc(self, op, a, b):
+        assert isinstance(a, int) and isinstance(b, int), f"Operands must be integers."
+        return op(a, b)
 
     def _apply(self, func, args):
         if callable(func):

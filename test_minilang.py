@@ -360,5 +360,12 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("while 0 {} then { print 2; }"), [2])
         self.assertEqual(get_output("while 1 { break; } then { print 2; }"), [])
 
+    def test_null(self):
+        self.assertEqual(get_output("print null;"), ["null"])
+        self.assertEqual(get_error("print -null;"), "Operand must be integer.")
+        self.assertEqual(get_error("print null + 1;"), "Operands must be integers.")
+        self.assertEqual(get_error("print 1 - null;"), "Operands must be integers.")
+
+
 if __name__ == "__main__":
     unittest.main()
