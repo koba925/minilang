@@ -92,7 +92,7 @@ class TestMinilang(unittest.TestCase):
     def test_var(self):
         self.assertEqual(get_output("var a = 1 + 2; print a; set a = a + 3; print a;"), [3, 6])
         self.assertEqual(get_output("var a = 1; var b = 2; print a; print b;"), [1, 2])
-        self.assertEqual(get_output("var a; print a;"), [0])
+        self.assertEqual(get_output("var a; print a;"), ["null"])
         self.assertEqual(get_error("var 1 = 1;"), "Expected a name, found `1`.")
         self.assertEqual(get_error("var a = 1; var a = 1;"), "`a` already defined.")
         self.assertEqual(get_error("set a;"), "Expected `=`, found `;`.")
@@ -173,7 +173,7 @@ class TestMinilang(unittest.TestCase):
 
     def test_user_function(self):
         self.assertEqual(get_output("print func() {};"), ["<func>"])
-        self.assertEqual(get_output("print func() {}();"), [0])
+        self.assertEqual(get_output("print func() {}();"), ["null"])
         self.assertEqual(get_output("func() { print 2; }();"), [2])
         self.assertEqual(get_output("func(a, b) { print a + b; }(2, 3);"), [5])
         self.assertEqual(get_output("""
@@ -200,7 +200,7 @@ class TestMinilang(unittest.TestCase):
                                     """), [1, 1, 2, 3, 5, 8])
 
     def test_return(self):
-        self.assertEqual(get_output("print func() { return; }();"), [0])
+        self.assertEqual(get_output("print func() { return; }();"), ["null"])
         self.assertEqual(get_output("print func() { return 2; }();"), [2])
         self.assertEqual(get_output("print func(a, b) { return a + b; }(2, 3);"), [5])
         self.assertEqual(get_output("func() { print 1; return; print 2; }();"), [1])
@@ -362,6 +362,7 @@ class TestMinilang(unittest.TestCase):
 
     def test_null(self):
         self.assertEqual(get_output("print null;"), ["null"])
+        self.assertEqual(get_output("var a = null; print a;"), ["null"])
         self.assertEqual(get_error("print -null;"), "Operand must be integer.")
         self.assertEqual(get_error("print null + 1;"), "Operands must be integers.")
         self.assertEqual(get_error("print 1 - null;"), "Operands must be integers.")

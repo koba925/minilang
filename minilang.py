@@ -18,7 +18,8 @@ class Scanner:
             case c if c.isalpha():
                 while self._current_char().isalnum() or self._current_char() == "_":
                     self._current_position += 1
-                return self._source[start:self._current_position]
+                token = self._source[start:self._current_position]
+                return None if token == "null" else token
             case c if c.isnumeric():
                 while self._current_char().isnumeric():
                     self._current_position += 1
@@ -77,7 +78,7 @@ class Parser:
         self._next_token()
         name = self._parse_primary()
         assert isinstance(name, str),  f"Expected a name, found `{name}`."
-        value = 0
+        value = None
         if op == "set" or self._current_token != ";":
             self._consume_token("=")
             value = self._parse_expression()
@@ -147,7 +148,7 @@ class Parser:
 
     def _parse_return(self):
         self._next_token()
-        value = 0
+        value = None
         if self._current_token != ";": value = self._parse_expression()
         self._consume_token(";")
         return ["return", value]
@@ -212,6 +213,9 @@ class Parser:
                 self._consume_token(")")
                 return exp
             case "func": return self._parse_func()
+            case None:
+                self._next_token()
+                return None
             case int(value) | str(value):
                 self._next_token()
                 return value
@@ -351,7 +355,7 @@ class Evaluator:
     def _eval_expr(self, expr):
         match expr:
             case int(value): return value
-            case "null": return None
+            case None: return None
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
             case ["-", a]: return self._unary_minus(a)
@@ -400,7 +404,7 @@ class Evaluator:
         [_, parameters, body, env] = func
         assert len(parameters) == len(args), f"Parameter's count doesn't match."
         self._env = dict(zip(func[1], args)) | { "_parent": env }
-        value = 0
+        value = None
         try: self.eval_statement(body)
         except Return as ret: value = ret.value
         self._env = parent_env
