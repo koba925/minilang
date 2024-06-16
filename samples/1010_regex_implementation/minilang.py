@@ -6,7 +6,7 @@ def interpret(source):
     current_position = 0
     while current_position < len(source):
         statement = statement_pattern.match(source, current_position)
-        assert statement is not None, "Error."
+        assert statement is not None, "Does not match."
         print(int(statement.group(1)))
         current_position = statement.end()
 

@@ -31,13 +31,13 @@ def interpret(source):
     scanner = Scanner(source)
 
     while (command := scanner.next_token()) != "$EOF":
-        assert command == "print", f"`print` expected, found `{command}`."
+        assert command == "print", f"Expected `print`, found `{command}`."
 
         number = scanner.next_token()
-        assert isinstance(number, int), f"Number expected, found `{number}`."
+        assert isinstance(number, int), f"Expected number , found `{number}`."
 
         semicolon = scanner.next_token()
-        assert semicolon == ";", f"Semicolon expected, found `{semicolon}`."
+        assert semicolon == ";", f"Expected semicolon, found `{semicolon}`."
 
         print(number)
 
