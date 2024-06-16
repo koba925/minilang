@@ -260,7 +260,7 @@ class Parser:
 
     def _consume_token(self, expected_token):
         self._check_token(expected_token)
-        self._next_token()
+        return self._next_token()
 
     def _next_token(self):
         self._current_token = self.scanner.next_token()

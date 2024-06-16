@@ -37,20 +37,21 @@ class Parser:
     def parse_program(self):
         program: list = ["program"]
         while self._current_token != "$EOF":
-            self._consume_token("print")
+            self._check_token("print")
             number = self._next_token()
             assert isinstance(number, int), f"Expected number , found `{number}`."
+            self._next_token()
             self._consume_token(";")
             program.append(["print", number])
         return program
 
+    def _consume_token(self, expected_token):
+        self._check_token(expected_token)
+        return self._next_token()
+
     def _check_token(self, expected_token):
         assert self._current_token == expected_token, \
                f"Expected `{expected_token}`, found `{self._current_token}`."
-
-    def _consume_token(self, expected_token):
-        self._check_token(expected_token)
-        self._next_token()
 
     def _next_token(self):
         self._current_token = self.scanner.next_token()
@@ -83,4 +84,4 @@ while True:
         print(ast)
         evaluator.eval_program(ast)
     except AssertionError as e:
-        print("Error: ", e)
+        print("Error:", e)
