@@ -69,19 +69,19 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("print func() {} - 2;"), "Operands must be integers.")
 
     def test_equality(self):
-        self.assertEqual(get_output("print 2 = 2;"), [1])
-        self.assertEqual(get_output("print 2 = 3;"), [0])
-        self.assertEqual(get_output("print 2 # 2;"), [0])
-        self.assertEqual(get_output("print 2 # 3;"), [1])
+        self.assertEqual(get_output("print 2 = 2;"), ["true"])
+        self.assertEqual(get_output("print 2 = 3;"), ["false"])
+        self.assertEqual(get_output("print 2 # 2;"), ["false"])
+        self.assertEqual(get_output("print 2 # 3;"), ["true"])
         self.assertEqual(get_ast("print 1 = 2 = 2;"), ["program", ["print", ["=", ["=", 1, 2], 2]]])
-        self.assertEqual(get_output("print 1 = 2 = 2;"), [0])
-        self.assertEqual(get_output("print 1 + 2 = 6 - 3;"), [1])
-        self.assertEqual(get_output("print func() {} = 0;"), [0])
-        self.assertEqual(get_output("print func() {} # 0;"), [1])
-        self.assertEqual(get_output("print func(a) { return a; } = func(a) { return a; };"), [1])
-        self.assertEqual(get_output("print func(a) { return a; } = func(b) { return b; };"), [0])
-        self.assertEqual(get_output("print func(a) { return a; } # func(a) { return a; };"), [0])
-        self.assertEqual(get_output("print func(a) { return a; } # func(b) { return b; };"), [1])
+        self.assertEqual(get_output("print 1 = 2 = 2;"), ["false"])
+        self.assertEqual(get_output("print 1 + 2 = 6 - 3;"), ["true"])
+        self.assertEqual(get_output("print func() {} = 0;"), ["false"])
+        self.assertEqual(get_output("print func() {} # 0;"), ["true"])
+        self.assertEqual(get_output("print func(a) { return a; } = func(a) { return a; };"), ["true"])
+        self.assertEqual(get_output("print func(a) { return a; } = func(b) { return b; };"), ["false"])
+        self.assertEqual(get_output("print func(a) { return a; } # func(a) { return a; };"), ["false"])
+        self.assertEqual(get_output("print func(a) { return a; } # func(b) { return b; };"), ["true"])
 
     def test_grouping(self):
         self.assertEqual(get_ast("print (2 + 3) * 4;"), ["program", ["print", ["*", ["+", 2, 3], 4]]])
@@ -106,23 +106,23 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("var a = 2; { var b = 4; print b; } print b;"), "`b` not defined.")
 
     def test_if(self):
-        self.assertEqual(get_ast("if 1 { print 2; }"), ["program", ["if", 1, ["block", ["print", 2]], ["block"]]])
-        self.assertEqual(get_output("if 1 { print 2; }"), [2])
-        self.assertEqual(get_output("if 0 { print 2; }"), [])
+        self.assertEqual(get_ast("if true { print 2; }"), ["program", ["if", True, ["block", ["print", 2]], ["block"]]])
+        self.assertEqual(get_output("if true { print 2; }"), [2])
+        self.assertEqual(get_output("if false { print 2; }"), [])
         self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; }"), [1])
         self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; }"), [])
-        self.assertEqual(get_output("if 1 { if 1 { print 2; } }"), [2])
-        self.assertEqual(get_output("if 1 { if 0 { print 2; } }"), [])
-        self.assertEqual(get_error("if 1 print 2;"), "Expected `{`, found `print`.")
+        self.assertEqual(get_output("if true { if true { print 2; } }"), [2])
+        self.assertEqual(get_output("if true { if false { print 2; } }"), [])
+        self.assertEqual(get_error("if true print 2;"), "Expected `{`, found `print`.")
 
     def test_else(self):
-        self.assertEqual(get_ast("if 1 { print 2; } else { print 3; }"),
-                         ["program", ["if", 1, ["block", ["print", 2]], ["block", ["print", 3]]]])
-        self.assertEqual(get_output("if 1 { print 2; } else { print 3; }"), [2])
-        self.assertEqual(get_output("if 0 { print 2; } else { print 3; }"), [3])
+        self.assertEqual(get_ast("if true { print 2; } else { print 3; }"),
+                         ["program", ["if", True, ["block", ["print", 2]], ["block", ["print", 3]]]])
+        self.assertEqual(get_output("if true { print 2; } else { print 3; }"), [2])
+        self.assertEqual(get_output("if false { print 2; } else { print 3; }"), [3])
         self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; } else { print 2; }"), [1])
         self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; } else { print 2; }"), [2])
-        self.assertEqual(get_error("if 1 { print 2; } else print 3;"), "Expected `{`, found `print`.")
+        self.assertEqual(get_error("if true { print 2; } else print 3;"), "Expected `{`, found `print`.")
 
     def test_while(self):
         self.assertEqual(get_output("""
@@ -132,7 +132,7 @@ class TestMinilang(unittest.TestCase):
                                         set i = i + 1;
                                     }
                                     """), [0, 1, 2])
-        self.assertEqual(get_error("while 1 print 2;"), "Expected `{`, found `print`.")
+        self.assertEqual(get_error("while true print 2;"), "Expected `{`, found `print`.")
 
     def test_fib(self):
         self.assertEqual(get_output("""
@@ -148,8 +148,8 @@ class TestMinilang(unittest.TestCase):
     def test_builtin_function(self):
         self.assertEqual(get_ast("print less(2 + 3, 2 * 3);"),
                          ["program", ["print", ["less", ["+", 2, 3], ["*", 2, 3]]]])
-        self.assertEqual(get_output("print less(2 + 3, 2 * 3);"), [1])
-        self.assertEqual(get_output("print less(2 * 3, 2 + 3);"), [0])
+        self.assertEqual(get_output("print less(2 + 3, 2 * 3);"), ["true"])
+        self.assertEqual(get_output("print less(2 * 3, 2 + 3);"), ["false"])
         self.assertEqual(get_output("print less;"), ["<builtin>"])
         self.assertEqual(get_error("print less(2 * 3 2);"), "Expected `,`, found `2`.")
         self.assertEqual(get_error("less(1);"), "Parameter's count doesn't match.")
@@ -242,13 +242,13 @@ class TestMinilang(unittest.TestCase):
 
     def test_even_odd(self):
         self.assertEqual(get_output("""
-                                    var is_even = func(a) { if a = 0 { return 1; } else { return is_odd(a - 1); } };
-                                    var is_odd = func(a) { if a = 0 { return 0; } else { return is_even(a - 1); } };
+                                    var is_even = func(a) { if a = 0 { return true; } else { return is_odd(a - 1); } };
+                                    var is_odd = func(a) { if a = 0 { return false; } else { return is_even(a - 1); } };
                                     print is_even(3);
                                     print is_odd(3);
                                     print is_even(4);
                                     print is_odd(4);
-                                    """), [0, 1, 1, 0])
+                                    """), ["false", "true", "true", "false"])
 
     def test_closure(self):
         self.assertEqual(get_output("""
@@ -275,35 +275,35 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("var a = 1; print -a;"), [-1])
 
     def test_and_or(self):
-        self.assertEqual(get_output("print 1 = 1 & 2 = 2;"), [1])
-        self.assertEqual(get_output("print 1 = 1 & 2 # 2;"), [0])
-        self.assertEqual(get_output("print 1 # 1 & 1 / 0;"), [0])
-        self.assertEqual(get_output("print 1 # 1 | 2 = 2;"), [1])
-        self.assertEqual(get_output("print 1 # 1 | 2 # 2;"), [0])
-        self.assertEqual(get_output("print 1 = 1 | 1 / 0;"), [1])
+        self.assertEqual(get_output("print 1 = 1 & 2 = 2;"), ["true"])
+        self.assertEqual(get_output("print 1 = 1 & 2 # 2;"), ["false"])
+        self.assertEqual(get_output("print 1 # 1 & 1 / 0;"), ["false"])
+        self.assertEqual(get_output("print 1 # 1 | 2 = 2;"), ["true"])
+        self.assertEqual(get_output("print 1 # 1 | 2 # 2;"), ["false"])
+        self.assertEqual(get_output("print 1 = 1 | 1 / 0;"), ["true"])
 
-        self.assertEqual(get_output("print 2 & 0;"), [0])
-        self.assertEqual(get_output("print 1 & 2;"), [2])
+        self.assertEqual(get_output("print true & false;"), ["false"])
+        self.assertEqual(get_output("print true & 2;"), [2])
         self.assertEqual(get_output("print 2 | 1;"), [2])
-        self.assertEqual(get_output("print 0 | 2;"), [2])
+        self.assertEqual(get_output("print false | 2;"), [2])
 
-        self.assertEqual(get_ast("print 1 & 1 & 0;"), ["program", ["print", ["&", ["&", 1, 1], 0]]])
-        self.assertEqual(get_output("print 1 & 1 & 0;"), [0])
-        self.assertEqual(get_output("print 1 & 0 & 1 / 0;"), [0])
+        self.assertEqual(get_ast("print true & true & false;"), ["program", ["print", ["&", ["&", True, True], False]]])
+        self.assertEqual(get_output("print true & true & false;"), ["false"])
+        self.assertEqual(get_output("print true & false & 1 / 0;"), ["false"])
 
-        self.assertEqual(get_ast("print 0 | 0 | 1;"), ["program", ["print", ["|", ["|", 0, 0], 1]]])
-        self.assertEqual(get_output("print 0 | 0 | 1;"), [1])
-        self.assertEqual(get_output("print 0 | 1 | 1 / 0;"), [1])
+        self.assertEqual(get_ast("print false | false | true;"), ["program", ["print", ["|", ["|", False, False], True]]])
+        self.assertEqual(get_output("print false | false | true;"), ["true"])
+        self.assertEqual(get_output("print false | true | 1 / 0;"), ["true"])
 
-        self.assertEqual(get_ast("print 1 | 1 & 0;"), ["program", ["print", ["|", 1, ["&", 1, 0]]]])
-        self.assertEqual(get_ast("print 1 & 1 | 0;"), ["program", ["print", ["|", ["&", 1, 1], 0]]])
-        self.assertEqual(get_output("print 1 | 1 & 0;"), [1])
-        self.assertEqual(get_output("print 1 & 1 | 0;"), [1])
+        self.assertEqual(get_ast("print true | true & false;"), ["program", ["print", ["|", True, ["&", True, False]]]])
+        self.assertEqual(get_ast("print true & true | false;"), ["program", ["print", ["|", ["&", True, True], False]]])
+        self.assertEqual(get_output("print true | true & false;"), ["true"])
+        self.assertEqual(get_output("print true & true | false;"), ["true"])
 
     def test_break(self):
         self.assertEqual(get_output("""
                                     var n = 0;
-                                    while 1 {
+                                    while true {
                                         if n = 3 { break; }
                                         print n;
                                         set n = n + 1;
@@ -332,10 +332,10 @@ class TestMinilang(unittest.TestCase):
                                     """), [5, 9])
 
     def test_elif(self):
-        self.assertEqual(get_output("if 1 { print 0; } elif 1 {print 1; } elif 1 { print 2; } else { print 3; }"), [0])
-        self.assertEqual(get_output("if 0 { print 0; } elif 1 {print 1; } elif 1 { print 2; } else { print 3; }"), [1])
-        self.assertEqual(get_output("if 0 { print 0; } elif 0 {print 1; } elif 1 { print 2; } else { print 3; }"), [2])
-        self.assertEqual(get_output("if 0 { print 0; } elif 0 {print 1; } elif 0 { print 2; } else { print 3; }"), [3])
+        self.assertEqual(get_output("if true { print 0; } elif true {print 1; } elif true { print 2; } else { print 3; }"), [0])
+        self.assertEqual(get_output("if false { print 0; } elif true {print 1; } elif true { print 2; } else { print 3; }"), [1])
+        self.assertEqual(get_output("if false { print 0; } elif false {print 1; } elif true { print 2; } else { print 3; }"), [2])
+        self.assertEqual(get_output("if false { print 0; } elif false {print 1; } elif false { print 2; } else { print 3; }"), [3])
 
     def test_for(self):
         self.assertEqual(get_output("for i = 0; i # 5; i = i + 1 { print i; }"), [0, 1, 2, 3, 4])
@@ -343,22 +343,22 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("for i = 0; i # 5; i = i + 1 { if i = 2 { continue; } print i; }"), [0, 1, 3, 4])
 
     def test_comparison(self):
-        self.assertEqual(get_output("print 2 + 3 < 2 * 3;"), [1])
-        self.assertEqual(get_output("print 2 * 3 < 2 * 3;"), [0])
-        self.assertEqual(get_output("print 2 * 3 < 2 + 3;"), [0])
-        self.assertEqual(get_output("print 2 + 3 <= 2 * 3;"), [1])
-        self.assertEqual(get_output("print 2 * 3 <= 2 * 3;"), [1])
-        self.assertEqual(get_output("print 2 * 3 <= 2 + 3;"), [0])
-        self.assertEqual(get_output("print 2 * 3 > 2 + 3;"), [1])
-        self.assertEqual(get_output("print 2 * 3 > 2 * 3;"), [0])
-        self.assertEqual(get_output("print 2 + 3 > 2 * 3;"), [0])
-        self.assertEqual(get_output("print 2 * 3 >= 2 + 3;"), [1])
-        self.assertEqual(get_output("print 2 * 3 >= 2 * 3;"), [1])
-        self.assertEqual(get_output("print 2 + 3 >= 2 * 3;"), [0])
+        self.assertEqual(get_output("print 2 + 3 < 2 * 3;"), ["true"])
+        self.assertEqual(get_output("print 2 * 3 < 2 * 3;"), ["false"])
+        self.assertEqual(get_output("print 2 * 3 < 2 + 3;"), ["false"])
+        self.assertEqual(get_output("print 2 + 3 <= 2 * 3;"), ["true"])
+        self.assertEqual(get_output("print 2 * 3 <= 2 * 3;"), ["true"])
+        self.assertEqual(get_output("print 2 * 3 <= 2 + 3;"), ["false"])
+        self.assertEqual(get_output("print 2 * 3 > 2 + 3;"), ["true"])
+        self.assertEqual(get_output("print 2 * 3 > 2 * 3;"), ["false"])
+        self.assertEqual(get_output("print 2 + 3 > 2 * 3;"), ["false"])
+        self.assertEqual(get_output("print 2 * 3 >= 2 + 3;"), ["true"])
+        self.assertEqual(get_output("print 2 * 3 >= 2 * 3;"), ["true"])
+        self.assertEqual(get_output("print 2 + 3 >= 2 * 3;"), ["false"])
 
     def test_while_then(self):
-        self.assertEqual(get_output("while 0 {} then { print 2; }"), [2])
-        self.assertEqual(get_output("while 1 { break; } then { print 2; }"), [])
+        self.assertEqual(get_output("while false {} then { print 2; }"), [2])
+        self.assertEqual(get_output("while true { break; } then { print 2; }"), [])
 
     def test_null(self):
         self.assertEqual(get_output("print null;"), ["null"])
@@ -371,11 +371,11 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print 1 = 1 ? 1 + 2 : 1 / 0;"), [3])
         self.assertEqual(get_output("print 1 # 1 ? 1 / 0  : 1 + 2;"), [3])
 
-        self.assertEqual(get_output("print 1 ? 2 : 1 ? 3 : 4;"), [2])
+        self.assertEqual(get_output("print true ? 2 : true ? 3 : 4;"), [2])
 
-        self.assertEqual(get_output("print 1 ? 1 ? 2 : 1 / 0 : 1 / 0 ? 0 : 0;"), [2])
-        self.assertEqual(get_output("print 1 ? 0 ? 1 / 0 : 2 : 1 / 0 ? 0 : 0;"), [2])
-        self.assertEqual(get_output("print 0 ? 1 / 0 ? 0 : 0 : 1 ? 2 : 1 / 0;"), [2])
+        self.assertEqual(get_output("print true ? true ? 2 : 1 / 0 : 1 / 0 ? 0 : 0;"), [2])
+        self.assertEqual(get_output("print true ? 0 ? 1 / 0 : 2 : 1 / 0 ? 0 : 0;"), [2])
+        self.assertEqual(get_output("print 0 ? 1 / 0 ? 0 : 0 : true ? 2 : 1 / 0;"), [2])
         self.assertEqual(get_output("print 0 ? 1 / 0 ? 0 : 0 : 0 ? 1 / 0 : 2;"), [2])
 
         self.assertEqual(get_error("print 1 # 1 ? 1 + 2;"), "Expected `:`, found `;`.")

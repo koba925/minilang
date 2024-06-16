@@ -19,7 +19,12 @@ class Scanner:
                 while self._current_char().isalnum() or self._current_char() == "_":
                     self._current_position += 1
                 token = self._source[start:self._current_position]
-                return None if token == "null" else token
+                match token:
+                    case "null": return None
+                    case "true": return True
+                    case "false": return False
+                    case _: return token
+
             case c if c.isnumeric():
                 while self._current_char().isnumeric():
                     self._current_position += 1
@@ -225,7 +230,7 @@ class Parser:
             case None:
                 self._next_token()
                 return None
-            case int(value) | str(value):
+            case int(value) | str(value) | bool(value):
                 self._next_token()
                 return value
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
@@ -272,7 +277,7 @@ class Evaluator:
     def __init__(self):
         self._output = []
         self._env: dict = {
-            "less": lambda a, b: self._calc(lambda a, b: 1 if a < b else 0, a, b),
+            "less": lambda a, b: self._calc(op.lt, a, b),
             "print_env": self._print_env
         }
 
@@ -327,13 +332,13 @@ class Evaluator:
         _set(self._env)
 
     def _eval_if(self, cond, conseq, alt):
-        if self._eval_expr(cond) != 0:
+        if self._eval_expr(cond):
             self.eval_statement(conseq)
         else:
             self.eval_statement(alt)
 
     def _eval_while(self, cond, body, then):
-        while self._eval_expr(cond) != 0:
+        while self._eval_expr(cond):
             try: self.eval_statement(body)
             except Continue: continue
             except Break: break
@@ -342,7 +347,7 @@ class Evaluator:
 
     def _eval_for(self, init_name, init_exp, cond, update_name, update_exp, body):
         self._eval_var(init_name, init_exp)
-        while self._eval_expr(cond) != 0:
+        while self._eval_expr(cond):
             try:
                 self.eval_statement(body)
                 self._eval_set(update_name, update_exp)
@@ -356,15 +361,16 @@ class Evaluator:
 
     def _to_str(self, value):
         match value:
+            case None: return "null"
+            case bool(b): return "true" if b else "false"
             case v if callable(v): return "<builtin>"
             case ["func", *_]: return "<func>"
-            case None: return "null"
             case _: return value
 
     def _eval_expr(self, expr):
         match expr:
-            case int(value): return value
             case None: return None
+            case int(value) | bool(value): return value
             case str(name): return self._eval_variable(name)
             case ["func", param, body]: return ["func", param, body, self._env]
             case ["-", a]: return self._unary_minus(a)
@@ -373,14 +379,14 @@ class Evaluator:
             case ["/", a, b]: return self._apply_calc(self._div, a, b)
             case ["+", a, b]: return self._apply_calc(op.add, a, b)
             case ["-", a, b]: return self._apply_calc(op.sub, a, b)
-            case ["<", a, b]: return 1 if self._apply_calc(op.lt, a, b) else 0
-            case ["<=", a, b]: return 1 if self._apply_calc(op.le, a, b) else 0
-            case [">", a, b]: return 1 if self._apply_calc(op.gt, a, b) else 0
-            case [">=", a, b]: return 1 if self._apply_calc(op.ge, a, b) else 0
-            case ["=", a, b]: return 1 if self._eval_expr(a) == self._eval_expr(b) else 0
-            case ["#", a, b]: return 1 if self._eval_expr(a) != self._eval_expr(b) else 0
-            case ["&", a, b]: return self._eval_and(a, b)
-            case ["|", a, b]: return self._eval_or(a, b)
+            case ["<", a, b]: return self._apply_calc(op.lt, a, b)
+            case ["<=", a, b]: return self._apply_calc(op.le, a, b)
+            case [">", a, b]: return self._apply_calc(op.gt, a, b)
+            case [">=", a, b]: return self._apply_calc(op.ge, a, b)
+            case ["=", a, b]: return self._eval_expr(a) == self._eval_expr(b)
+            case ["#", a, b]: return self._eval_expr(a) != self._eval_expr(b)
+            case ["&", a, b]: return self._eval_expr(a) and self._eval_expr(b)
+            case ["|", a, b]: return self._eval_expr(a) or self._eval_expr(b)
             case ["?", cond, conseq, alt]: return self._eval_ternary(cond, conseq, alt)
             case [func, *args]:
                 return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
@@ -420,17 +426,9 @@ class Evaluator:
         self._env = parent_env
         return value
 
-    def _eval_and(self, a, b):
-        a = self._eval_expr(a)
-        return self._eval_expr(b) if a != 0 else a
-
-    def _eval_or(self, a, b):
-        a = self._eval_expr(a)
-        return self._eval_expr(b) if a == 0 else a
-
     def _eval_ternary(self, cond, conseq, alt):
         cond = self._eval_expr(cond)
-        return self._eval_expr(conseq) if cond != 0 else self._eval_expr(alt)
+        return self._eval_expr(conseq) if cond else self._eval_expr(alt)
 
     def _eval_variable(self, name):
         def _get(env):
