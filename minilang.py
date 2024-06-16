@@ -450,14 +450,19 @@ if __name__ == "__main__":
 
     def repl():
         evaluator = Evaluator()
-        while source := "\n".join(iter(lambda: input(": "), "")):
+
+        while True:
+            print("Input source and enter Ctrl+D:")
+            if (source := sys.stdin.read()) == "": break
+
             try:
                 ast = Parser(source).parse_program()
                 print(ast)
                 evaluator.clear_output()
                 evaluator.eval_statement(ast)
-            except AssertionError as e: print(e)
-            print(*evaluator.output(), sep="\n")
+            except AssertionError as e:
+                print(e)
+            print("Output:", *evaluator.output(), sep="\n")
 
     if len(sys.argv) > 1:
         run_from_file(sys.argv[1])
