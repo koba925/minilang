@@ -6,7 +6,7 @@ def get_ast(source): return Parser(source).parse_program()
 
 def get_output(source):
     evaluator = Evaluator()
-    evaluator.eval_ast(Parser(source).parse_program())
+    evaluator.eval_program(Parser(source).parse_program())
     return evaluator.output()
 
 def get_error(source):
@@ -310,6 +310,7 @@ class TestMinilang(unittest.TestCase):
                                     }
                                     print 10;
                                     """), [0, 1, 2, 10])
+        self.assertEqual(get_error("break;"), "Break at top level.")
 
     def test_continue(self):
         self.assertEqual(get_output("""
@@ -321,6 +322,7 @@ class TestMinilang(unittest.TestCase):
                                     }
                                     print 10;
                                     """), [1, 3, 4, 10])
+        self.assertEqual(get_error("continue;"), "Continue at top level.")
 
     def test_def(self):
         self.assertEqual(get_output("""

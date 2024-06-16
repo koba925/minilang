@@ -290,9 +290,18 @@ class Evaluator:
             if "_parent" in env: _print(env["_parent"], level + 1)
         _print(self._env, 0)
 
-    def eval_ast(self, ast):
-        match ast:
-            case ["program", *statements]: self._eval_program(statements)
+    def eval_program(self, program):
+        try:
+            match program:
+                case ["program", *statements]:
+                    for statement in statements: self._eval_statement(statement)
+                case unexpected: assert False, f"Internal Error at `{unexpected}`."
+        except Return: assert False, "Return from top level."
+        except Break: assert False, "Break at top level."
+        except Continue: assert False, "Continue at top level."
+
+    def _eval_statement(self, statement):
+        match statement:
             case ["block", *statements]: self._eval_block(statements)
             case ["var", name, value]: self._eval_var(name, value)
             case ["set", name, value]: self._eval_set(name, value)
@@ -307,17 +316,11 @@ class Evaluator:
             case ["expr", expr]: self._eval_expr(expr)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
-    def _eval_program(self, statements):
-        try:
-            for statement in statements: self.eval_ast(statement)
-        except Return:
-            assert False, "Return from top level."
-
     def _eval_block(self, statements):
         parent_env = self._env
         self._env = {"_parent": parent_env}
         for statement in statements:
-            self.eval_ast(statement)
+            self._eval_statement(statement)
         self._env = parent_env
 
     def _eval_var(self, name, value):
@@ -333,23 +336,23 @@ class Evaluator:
 
     def _eval_if(self, cond, conseq, alt):
         if self._eval_expr(cond):
-            self.eval_ast(conseq)
+            self._eval_statement(conseq)
         else:
-            self.eval_ast(alt)
+            self._eval_statement(alt)
 
     def _eval_while(self, cond, body, then):
         while self._eval_expr(cond):
-            try: self.eval_ast(body)
+            try: self._eval_statement(body)
             except Continue: continue
             except Break: break
         else:
-            self.eval_ast(then)
+            self._eval_statement(then)
 
     def _eval_for(self, init_name, init_exp, cond, update_name, update_exp, body):
         self._eval_var(init_name, init_exp)
         while self._eval_expr(cond):
             try:
-                self.eval_ast(body)
+                self._eval_statement(body)
                 self._eval_set(update_name, update_exp)
             except Continue:
                 self._eval_set(update_name, update_exp)
@@ -421,7 +424,7 @@ class Evaluator:
         assert len(parameters) == len(args), f"Parameter's count doesn't match."
         self._env = dict(zip(func[1], args)) | { "_parent": env }
         value = None
-        try: self.eval_ast(body)
+        try: self._eval_statement(body)
         except Return as ret: value = ret.value
         self._env = parent_env
         return value
@@ -444,7 +447,7 @@ if __name__ == "__main__":
         evaluator = Evaluator()
         try:
             with open(sys.argv[1], "r") as f:
-                evaluator.eval_ast(Parser(f.read()).parse_program())
+                evaluator._eval_statement(Parser(f.read()).parse_program())
         except AssertionError as e: print(e, file=sys.stderr)
         print(*evaluator.output(), sep="\n")
 
@@ -459,7 +462,7 @@ if __name__ == "__main__":
                 ast = Parser(source).parse_program()
                 print(ast)
                 evaluator.clear_output()
-                evaluator.eval_ast(ast)
+                evaluator._eval_statement(ast)
             except AssertionError as e:
                 print(e)
             print("Output:", *evaluator.output(), sep="\n")
