@@ -6,7 +6,7 @@ def get_ast(source): return Parser(source).parse_program()
 
 def get_output(source):
     evaluator = Evaluator()
-    evaluator.eval_statement(Parser(source).parse_program())
+    evaluator.eval_ast(Parser(source).parse_program())
     return evaluator.output()
 
 def get_error(source):
