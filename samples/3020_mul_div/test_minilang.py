@@ -45,5 +45,15 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_ast("print 18 - 7 - 6;"), ["program", ["print", ["-", ["-", 18, 7], 6]]])
         self.assertEqual(get_output("print 18 - 7 - 6;"), [5])
 
+    def test_mul_div(self):
+        self.assertEqual(get_output("print 5 * 6;"), [30])
+        self.assertEqual(get_ast("print 5 * 6 * 7;"), ["program", ["print", ["*", ["*", 5, 6], 7]]])
+        self.assertEqual(get_output("print 5 * 6 * 7;"), [210])
+
+        self.assertEqual(get_output("print 210 / 7;"), [30])
+        self.assertEqual(get_ast("print 210 / 7 / 6;"), ["program", ["print", ["/", ["/", 210, 7], 6]]])
+        self.assertEqual(get_output("print 210 / 7 / 6;"), [5])
+        self.assertEqual(get_error("print 5 / 0;"), "Division by zero.")
+
 if __name__ == "__main__":
     unittest.main()
