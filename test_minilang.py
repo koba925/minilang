@@ -54,7 +54,7 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("print 2 * func() {};"), "Operands must be integers.")
         self.assertEqual(get_error("print func() {} / 2;"), "Operands must be integers.")
 
-    def test_term(self):
+    def test_add_sum(self):
         self.assertEqual(get_output("print 2 + 3;"), [5])
         self.assertEqual(get_ast("print 2 + 3 + 4;"), ["program", ["print", ["+", ["+", 2, 3], 4]]])
         self.assertEqual(get_output("print 2 + 3 + 4;"), [9])

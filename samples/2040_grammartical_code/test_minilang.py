@@ -7,7 +7,7 @@ def get_ast(source): return Parser(source).parse_program()
 def get_output(source):
     evaluator = Evaluator()
     evaluator.eval_program(Parser(source).parse_program())
-    return evaluator.output()
+    return evaluator.output
 
 def get_error(source):
     try: output = get_output(source)
@@ -18,6 +18,8 @@ class TestMinilang(unittest.TestCase):
     def test_print(self):
         self.assertEqual(get_ast(""), ["program"])
         self.assertEqual(get_output(""), [])
+
+        self.assertEqual(get_ast(" \t\n"), ["program"])
         self.assertEqual(get_output(" \t\n"), [])
 
         self.assertEqual(get_ast("print 123;"), ["program", ["print", 123]])

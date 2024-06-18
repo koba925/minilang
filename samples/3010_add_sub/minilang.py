@@ -36,13 +36,36 @@ class Parser:
     def parse_program(self):
         program: list = ["program"]
         while self._current_token != "$EOF":
-            self._check_token("print")
-            number = self._next_token()
-            assert isinstance(number, int), f"Expected number , found `{number}`."
-            self._next_token()
-            self._consume_token(";")
-            program.append(["print", number])
+            program.append(self._parse_statement())
         return program
+
+    def _parse_statement(self):
+        match self._current_token:
+            case "print": return self._parse_print()
+            case unexpected: assert False, f"Unexpected token `{unexpected}`."
+
+    def _parse_print(self):
+        self._next_token()
+        expr = self._parse_expression()
+        self._consume_token(";")
+        return ["print", expr]
+
+    def _parse_expression(self):
+        return self._parse_add_sub()
+
+    def _parse_add_sub(self):
+        add_sub = self._parse_primary()
+        while (op := self._current_token) in ("+", "-"):
+            self._next_token()
+            add_sub = [op, add_sub, self._parse_primary()]
+        return add_sub
+
+    def _parse_primary(self):
+        match self._current_token:
+            case int(value):
+                self._next_token()
+                return value
+            case unexpected: assert False, f"Unexpected token `{unexpected}`."
 
     def _consume_token(self, expected_token):
         self._check_token(expected_token)
@@ -55,6 +78,8 @@ class Parser:
     def _next_token(self):
         self._current_token = self.scanner.next_token()
         return self._current_token
+
+import operator as op
 
 class Evaluator:
     def __init__(self):
@@ -70,8 +95,21 @@ class Evaluator:
 
     def _eval_statement(self, statement):
         match statement:
-            case ["print", val]: self.output.append(val)
+            case ["print", expr]: self._eval_print(expr)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
+
+    def _eval_print(self, expr):
+        self.output.append(self._eval_expr(expr))
+
+    def _eval_expr(self, expr):
+        match expr:
+            case int(value): return value
+            case ["+", a, b]: return self._apply_calc(op.add, a, b)
+            case ["-", a, b]: return self._apply_calc(op.sub, a, b)
+            case unexpected: assert False, f"Internal Error at `{unexpected}`."
+
+    def _apply_calc(self, op, a, b):
+        return op(self._eval_expr(a), self._eval_expr(b))
 
 if __name__ == "__main__":
     import sys

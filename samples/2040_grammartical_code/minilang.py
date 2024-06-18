@@ -51,6 +51,9 @@ class Parser:
         return ["print", expr]
 
     def _parse_expression(self):
+        return self._parse_primary()
+
+    def _parse_primary(self):
         match self._current_token:
             case int(value):
                 self._next_token()
@@ -71,12 +74,10 @@ class Parser:
 
 class Evaluator:
     def __init__(self):
-        self._output = []
-
-    def clear_output(self): self._output = []
-    def output(self): return self._output
+        self.output = []
 
     def eval_program(self, program):
+        self.output = []
         match program:
             case ["program", *statements]:
                 for statement in statements:
@@ -85,7 +86,15 @@ class Evaluator:
 
     def _eval_statement(self, statement):
         match statement:
-            case ["print", val]: self._output.append(val)
+            case ["print", expr]: self._eval_print(expr)
+            case unexpected: assert False, f"Internal Error at `{unexpected}`."
+
+    def _eval_print(self, expr):
+        self.output.append(self._eval_expr(expr))
+
+    def _eval_expr(self, expr):
+        match expr:
+            case int(value): return value
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
 if __name__ == "__main__":
@@ -101,6 +110,6 @@ if __name__ == "__main__":
             ast = Parser(source).parse_program()
             print(ast)
             evaluator.eval_program(ast)
-            print(*evaluator.output(), sep="\n")
+            print(*evaluator.output, sep="\n")
         except AssertionError as e:
             print("Error:", e)
