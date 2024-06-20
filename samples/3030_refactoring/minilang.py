@@ -82,8 +82,6 @@ class Parser:
         self._current_token = self.scanner.next_token()
         return self._current_token
 
-import operator
-
 class Evaluator:
     def __init__(self):
         self.output = []
@@ -107,14 +105,11 @@ class Evaluator:
     def _eval_expr(self, expr):
         match expr:
             case int(value): return value
-            case ["*", a, b]: return self._apply_calc(operator.mul, a, b)
-            case ["/", a, b]: return self._apply_calc(self._div, a, b)
-            case ["+", a, b]: return self._apply_calc(operator.add, a, b)
-            case ["-", a, b]: return self._apply_calc(operator.sub, a, b)
+            case ["*", a, b]: return self._eval_expr(a) * self._eval_expr(b)
+            case ["/", a, b]: return self._div(self._eval_expr(a), self._eval_expr(b))
+            case ["+", a, b]: return self._eval_expr(a) + self._eval_expr(b)
+            case ["-", a, b]: return self._eval_expr(a) - self._eval_expr(b)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
-
-    def _apply_calc(self, func, a, b):
-        return func(self._eval_expr(a), self._eval_expr(b))
 
     def _div(self, a, b):
         assert b != 0, f"Division by zero."

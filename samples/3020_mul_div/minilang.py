@@ -119,7 +119,6 @@ class Evaluator:
         assert b != 0, f"Division by zero."
         return a // b
 
-
 if __name__ == "__main__":
     import sys
 
