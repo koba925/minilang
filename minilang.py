@@ -438,7 +438,7 @@ class Evaluator:
         parent_env = self._env
         assert len(parameters) == len(args), f"Parameter's count doesn't match."
         self._env = Environment(env)
-        for param, arg in zip(func[1], args): self._env.define(param, arg)
+        for param, arg in zip(parameters, args): self._env.define(param, arg)
 
         value = None
         try: self._eval_statement(body)
