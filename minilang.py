@@ -266,6 +266,29 @@ class Parser:
         self._current_token = self.scanner.next_token()
         return self._current_token
 
+class Environment:
+    def __init__(self, parent:"Environment | None"=None):
+        self._values = {}
+        self._parent = parent
+
+    def define(self, name, value):
+        assert name not in self._values, f"`{name}` already defined."
+        self._values[name] = value
+
+    def assign(self, name, value):
+        if name in self._values: self._values[name] = value
+        elif self._parent is not None: self._parent.assign(name, value)
+        else: assert False, f"`{name}` not defined."
+
+    def get(self, name):
+        if name in self._values: return self._values[name]
+        if self._parent is not None: return self._parent.get(name)
+        assert False, f"`{name}` not defined."
+
+    def list(self):
+        parent = [] if self._parent is None else self._parent.list()
+        return parent + [self._values]
+
 class Break(Exception): pass
 class Continue(Exception): pass
 class Return(Exception):
@@ -276,19 +299,16 @@ import inspect , operator as op
 class Evaluator:
     def __init__(self):
         self._output = []
-        self._env: dict = {
-            "less": lambda a, b: self._calc(op.lt, a, b),
-            "print_env": self._print_env
-        }
+        self._env = Environment()
+        self._env.define("less", lambda a, b: self._calc(op.lt, a, b))
+        self._env.define("print_env", self._print_env)
 
     def clear_output(self): self._output = []
     def output(self): return self._output
 
     def _print_env(self):
-        def _print(env, level):
-            print(level, { k: self._to_print(v) for k, v in env.items() if k != "_parent" })
-            if "_parent" in env: _print(env["_parent"], level + 1)
-        _print(self._env, 0)
+        for values in self._env.list():
+            print({ k: self._to_print(v) for k, v in values.items()})
 
     def eval_program(self, program):
         try:
@@ -318,21 +338,16 @@ class Evaluator:
 
     def _eval_block(self, statements):
         parent_env = self._env
-        self._env = {"_parent": parent_env}
+        self._env = Environment(parent_env)
         for statement in statements:
             self._eval_statement(statement)
         self._env = parent_env
 
     def _eval_var(self, name, value):
-        assert name not in self._env, f"`{name}` already defined."
-        self._env[name] = self._eval_expr(value)
+        self._env.define(name, self._eval_expr(value))
 
     def _eval_set(self, name, value):
-        def _set(env):
-            if name in env: env[name] = self._eval_expr(value)
-            elif "_parent" in env: _set(env["_parent"])
-            else: assert False, f"`{name}` not defined."
-        _set(self._env)
+        self._env.assign(name, self._eval_expr(value))
 
     def _eval_if(self, cond, conseq, alt):
         if self._eval_expr(cond):
@@ -419,10 +434,12 @@ class Evaluator:
             assert len(parameters) == len(args), f"Parameter's count doesn't match."
             return func(*args)
 
-        parent_env = self._env
         [_, parameters, body, env] = func
+        parent_env = self._env
         assert len(parameters) == len(args), f"Parameter's count doesn't match."
-        self._env = dict(zip(func[1], args)) | { "_parent": env }
+        self._env = Environment(env)
+        for param, arg in zip(func[1], args): self._env.define(param, arg)
+
         value = None
         try: self._eval_statement(body)
         except Return as ret: value = ret.value
@@ -434,11 +451,7 @@ class Evaluator:
         return self._eval_expr(conseq) if cond else self._eval_expr(alt)
 
     def _eval_variable(self, name):
-        def _get(env):
-            if name in env: return env[name]
-            if "_parent" in env: return _get(env["_parent"])
-            assert False, f"`{name}` not defined."
-        return _get(self._env)
+        return self._env.get(name)
 
 if __name__ == "__main__":
     import sys
@@ -447,7 +460,7 @@ if __name__ == "__main__":
         evaluator = Evaluator()
         try:
             with open(sys.argv[1], "r") as f:
-                evaluator._eval_statement(Parser(f.read()).parse_program())
+                evaluator.eval_program(Parser(f.read()).parse_program())
         except AssertionError as e: print(e, file=sys.stderr)
         print(*evaluator.output(), sep="\n")
 
@@ -462,7 +475,7 @@ if __name__ == "__main__":
                 ast = Parser(source).parse_program()
                 print(ast)
                 evaluator.clear_output()
-                evaluator._eval_statement(ast)
+                evaluator.eval_program(ast)
             except AssertionError as e:
                 print(e)
             print("Output:", *evaluator.output(), sep="\n")
