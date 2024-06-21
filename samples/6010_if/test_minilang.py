@@ -31,7 +31,6 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("  print  5  ;\n\tprint  6  ;  \n  print\n7\n\n ; \n"), [5, 6, 7])
 
         self.assertEqual(get_error("prin 5;"), "Unexpected token `prin`.")
-        self.assertEqual(get_error("print a;"), "Unexpected token `a`.")
         self.assertEqual(get_error("print 5:"), "Expected `;`, found `:`.")
         self.assertEqual(get_error("print 5"), "Expected `;`, found `$EOF`.")
         self.assertEqual(get_error("print 5; prin 6;"), "Unexpected token `prin`.")
@@ -81,6 +80,36 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("print true # false;"), ["true"])
         self.assertEqual(get_ast("print 5 = 6 = true;"), ["program", ["print", ["=", ["=", 5, 6], True]]])
         self.assertEqual(get_output("print 5 = 6 = true;"), ["false"])
+
+    def test_variable(self):
+        self.assertEqual(get_output("var aa = 5 + 6; var bb = 7 * 8; print aa + bb;"), [67])
+        self.assertEqual(get_output("var a = 5; print a; set a = a + 6; print a;"), [5, 11])
+        self.assertEqual(get_output("var a = true; print a; set a = false; print a;"), ["true", "false"])
+        self.assertEqual(get_error("var 1 = 1;"), "Expected a name, found `1`.")
+        self.assertEqual(get_error("var a = 1; var a = 1;"), "`a` already defined.")
+        self.assertEqual(get_error("set a;"), "Expected `=`, found `;`.")
+        self.assertEqual(get_error("set 1 = 1;"), "Expected a name, found `1`.")
+        self.assertEqual(get_error("set a = 1;"), "`a` not defined.")
+        self.assertEqual(get_error("print a;"), "`a` not defined.")
+
+    def test_scope(self):
+        self.assertEqual(get_output("var a = 5 + 6; { var a = 7; print a; } print a;"), [7, 11])
+        self.assertEqual(get_output("var a = 5 + 6; { set a = 7; print a; } print a;"), [7, 7])
+        self.assertEqual(get_error("var a = 5 + 6; { var b = 7; print b; } print b;"), "`b` not defined.")
+        self.assertEqual(get_error("{ print 1;"), "Unexpected token `$EOF`.")
+
+    def test_if(self):
+        self.assertEqual(get_ast("if 1 + 2 = 4 - 1 { print 1; }"), \
+                         ["program", ["if", ["=", ["+", 1, 2], ["-", 4, 1]], ["block", ["print", 1]]]])
+        self.assertEqual(get_output("if 1 + 2 = 4 - 1 { print 1; }"), [1])
+        self.assertEqual(get_output("if 1 + 2 # 4 - 1 { print 1; }"), [])
+
+        self.assertEqual(get_output("if true { print 2; }"), [2])
+        self.assertEqual(get_output("if false { print 2; }"), [])
+        self.assertEqual(get_output("if true { if true { print 2; } }"), [2])
+        self.assertEqual(get_output("if true { if false { print 2; } }"), [])
+
+        self.assertEqual(get_error("if true print 2;"), "Expected `{`, found `print`.")
 
 if __name__ == "__main__":
     unittest.main()

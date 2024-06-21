@@ -56,9 +56,9 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_error("print 5 / 0;"), "Division by zero.")
 
     def test_parens(self):
-        self.assertEqual(get_ast("print (5 + 6) * 7;"), ['program', ['print', ['*', ['+', 5, 6], 7]]])
+        self.assertEqual(get_ast("print (5 + 6) * 7;"), ["program", ["print", ["*", ["+", 5, 6], 7]]])
         self.assertEqual(get_output("print (5 + 6) * 7;"), [77])
-        self.assertEqual(get_ast("print 5 * (6 + 7);"), ['program', ['print', ['*', 5, ['+', 6, 7]]]])
+        self.assertEqual(get_ast("print 5 * (6 + 7);"), ["program", ["print", ["*", 5, ["+", 6, 7]]]])
         self.assertEqual(get_output("print 5 * (6 + 7);"), [65])
 
     def test_power(self):
