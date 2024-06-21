@@ -410,7 +410,6 @@ class Evaluator:
                 return self._apply(self._eval_expr(func), [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Unexpected expression at `{unexpected}`."
 
-
     def _unary_minus(self, a):
         a = self._eval_expr(a)
         assert isinstance(a, int), f"Operand must be integer."

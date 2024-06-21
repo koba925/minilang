@@ -100,11 +100,23 @@ class TestMinilang(unittest.TestCase):
 
     def test_if(self):
         self.assertEqual(get_ast("if 5 = 5 { print 6; }"), \
-                         ["program", ["if", ["=", 5, 5], ["block", ["print", 6]]]])
+                         ['program', ['if', ['=', 5, 5], ['block', ['print', 6]], ['block']]])
         self.assertEqual(get_output("if 5 = 5 { print 6; }"), [6])
         self.assertEqual(get_output("if 5 # 5 { print 6; }"), [])
 
         self.assertEqual(get_error("if true print 5;"), "Expected `{`, found `print`.")
+
+    def test_else(self):
+        self.assertEqual(get_ast("if 5 = 5 { print 6; } else { print 7; }"), \
+                         ["program", ["if", ["=", 5, 5], ["block", ["print", 6]], ["block", ["print", 7]]]])
+        self.assertEqual(get_output("if 5 = 5 { print 6; } else { print 7; }"), [6])
+        self.assertEqual(get_output("if 5 # 5 { print 6; } else { print 7; }"), [7])
+
+        self.assertEqual(get_output("if true { print 6; } else { if true { print 7; } else {print 8;} }"), [6])
+        self.assertEqual(get_output("if false { print 6; } else { if true { print 7; } else {print 8;} }"), [7])
+        self.assertEqual(get_output("if false { print 6; } else { if false { print 7; } else {print 8;} }"), [8])
+
+        self.assertEqual(get_error("if true { print 5; } else print 6;"), "Expected `{`, found `print`.")
 
 if __name__ == "__main__":
     unittest.main()
