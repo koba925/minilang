@@ -100,9 +100,12 @@ class TestMinilang(unittest.TestCase):
 
     def test_if(self):
         self.assertEqual(get_ast("if 5 = 5 { print 6; }"), \
-                         ["program", ["if", ["=", 5, 5], ["block", ["print", 6]]]])
+                         ['program', ['if', ['=', 5, 5], ['block', ['print', 6]]]])
         self.assertEqual(get_output("if 5 = 5 { print 6; }"), [6])
         self.assertEqual(get_output("if 5 # 5 { print 6; }"), [])
+
+        self.assertEqual(get_output("if true { if true { print 6; } }"), [6])
+        self.assertEqual(get_output("if true { if false { print 6; } }"), [])
 
         self.assertEqual(get_error("if true print 5;"), "Expected `{`, found `print`.")
 
