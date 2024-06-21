@@ -132,5 +132,25 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_output("if false { print 5; } elif false { print 6; } elif false { print 7; } else { print 8; }"), [8])
         self.assertEqual(get_output("if false { print 5; } elif false { print 6; } elif false { print 7; }"), [])
 
+    def test_while(self):
+        self.assertEqual(get_output("""
+                                    var i = 0;
+                                    while i # 3 {
+                                        print i;
+                                        set i = i + 1;
+                                    }
+                                    """), [0, 1, 2])
+        self.assertEqual(get_error("while true print 2;"), "Expected `{`, found `print`.")
+
+    def test_fib(self):
+        self.assertEqual(get_output("""
+                                    var i = 0; var a = 1; var b = 0; var tmp = 0;
+                                    while i # 5 {
+                                        print a;
+                                        set tmp = a; set a = a + b; set b = tmp;
+                                        set i = i + 1;
+                                    }
+                                    """), [1, 1, 2, 3, 5])
+
 if __name__ == "__main__":
     unittest.main()
