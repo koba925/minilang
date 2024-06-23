@@ -196,8 +196,8 @@ class TestMinilang(unittest.TestCase):
                                             set i = i + 1;
                                         }
                                     };
-                                    fib(6);
-                                    """), [1, 1, 2, 3, 5, 8])
+                                    fib(3); fib(6);
+                                    """), [1, 1, 2, 1, 1, 2, 3, 5, 8])
 
     def test_return(self):
         self.assertEqual(get_output("print func() { return; }();"), ["null"])
