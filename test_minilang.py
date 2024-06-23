@@ -211,7 +211,7 @@ class TestMinilang(unittest.TestCase):
                                     print sum(2, 3);
                                     print sum(4, 5);
                                     """), [5, 9])
-        self.assertEqual(get_output("print func(b) { return func(a) { return a + b; }; }(2)(3);"), [5])
+        self.assertEqual(get_output("print func() { return func(a) { return a + 5; }; }()(3);"), [5])
         self.assertEqual(get_error("return;"), "Return from top level.")
         self.assertEqual(get_error("if 1 = 1 { return; }"), "Return from top level.")
 

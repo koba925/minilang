@@ -308,7 +308,7 @@ class Evaluator:
 
     def _print_env(self):
         for values in self._env.list():
-            print({ k: self._to_print(v) for k, v in values.items()})
+            print({ k: self._to_print(v) for k, v in values.items() })
 
     def eval_program(self, program):
         try:

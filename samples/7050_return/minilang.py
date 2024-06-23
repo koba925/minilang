@@ -49,6 +49,7 @@ class Parser:
             case "var" | "set": return self._parse_var_set()
             case "if": return self._parse_if()
             case "while": return self._parse_while()
+            case "return": return self._parse_return()
             case "print": return self._parse_print()
             case _: return self._parse_expression_statement()
 
@@ -90,6 +91,13 @@ class Parser:
         self._check_token("{")
         body = self._parse_block()
         return ["while", cond, body]
+
+    def _parse_return(self):
+        self._next_token()
+        value = 0
+        if self._current_token != ";": value = self._parse_expression()
+        self._consume_token(";")
+        return ["return", value]
 
     def _parse_print(self):
         self._next_token()
@@ -142,10 +150,30 @@ class Parser:
                 exp = self._parse_expression()
                 self._consume_token(")")
                 return exp
+            case "func": return self._parse_func()
             case int(value) | bool(value) | str(value):
                 self._next_token()
                 return value
             case unexpected: assert False, f"Unexpected token `{unexpected}`."
+
+    def _parse_func(self):
+        self._next_token()
+        params = self._parse_parameters()
+        body = self._parse_block()
+        return ["func", params, body]
+
+    def _parse_parameters(self):
+        self._consume_token("(")
+        params = []
+        while self._current_token != ")":
+            param = self._current_token
+            assert isinstance(param, str), f"Name expected, found `{param}`."
+            self._next_token()
+            params.append(param)
+            if self._current_token != ")":
+                self._consume_token(",")
+        self._consume_token(")")
+        return params
 
     def _consume_token(self, expected_token):
         self._check_token(expected_token)
@@ -158,6 +186,9 @@ class Parser:
     def _next_token(self):
         self._current_token = self.scanner.next_token()
         return self._current_token
+
+class Return(Exception):
+    def __init__(self, value): self.value = value
 
 class Environment:
     def __init__(self, parent:"Environment | None"=None):
@@ -208,6 +239,7 @@ class Evaluator:
             case ["set", name, value]: self._eval_set(name, value)
             case ["if", cond, conseq, alt]: self._eval_if(cond, conseq, alt)
             case ["while", cond, body]: self._eval_while(cond, body)
+            case ["return", value]: raise Return(self._eval_expr(value))
             case ["print", expr]: self._eval_print(expr)
             case ["expr", expr]: self._eval_expr(expr)
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
@@ -242,12 +274,14 @@ class Evaluator:
         match value:
             case bool(b): return "true" if b else "false"
             case v if callable(v): return "<builtin>"
+            case ["func", *_]: return "<func>"
             case _: return value
 
     def _eval_expr(self, expr):
         match expr:
             case int(value) | bool(value): return value
             case str(name): return self._eval_variable(name)
+            case ["func", param, body]: return ["func", param, body]
             case ["^", a, b]: return self._eval_expr(a) ** self._eval_expr(b)
             case ["*", a, b]: return self._eval_expr(a) * self._eval_expr(b)
             case ["/", a, b]: return self._div(self._eval_expr(a), self._eval_expr(b))
@@ -256,14 +290,28 @@ class Evaluator:
             case ["=", a, b]: return self._eval_expr(a) == self._eval_expr(b)
             case ["#", a, b]: return self._eval_expr(a) != self._eval_expr(b)
             case [func, *args]:
-                func = self._eval_expr(func)
-                args = [self._eval_expr(arg) for arg in args]
-                return func(*args)
+                return self._apply(self._eval_expr(func),
+                                   [self._eval_expr(arg) for arg in args])
             case unexpected: assert False, f"Internal Error at `{unexpected}`."
 
     def _div(self, a, b):
         assert b != 0, f"Division by zero."
         return a // b
+
+    def _apply(self, func, args):
+        if callable(func): return func(*args)
+
+        [_, parameters, body] = func
+        parent_env = self._env
+        self._env = Environment(parent_env)
+        for param, arg in zip(parameters, args): self._env.define(param, arg)
+        value = 0
+        try:
+            self._eval_statement(body)
+        except Return as ret:
+            value = ret.value
+        self._env = parent_env
+        return value
 
     def _eval_variable(self, name):
         return self._env.get(name)
