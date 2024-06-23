@@ -176,5 +176,14 @@ class TestMinilang(unittest.TestCase):
         self.assertEqual(get_ast("5 + 6;"), ["program", ["expr", ["+", 5, 6]]])
         self.assertEqual(get_output("5 + 6;"), [])
 
+    def test_user_function_type(self):
+        self.assertEqual(get_ast("func() {};"), \
+                         ["program", ["expr", ["func", [], ["block"]]]])
+        self.assertEqual(get_output("print func() {};"), ["<func>"])
+
+        self.assertEqual(get_ast("func(a, b) { a + b; };"), \
+                         ["program", ["expr", ["func", ["a", "b"], ["block", ["expr", ["+", "a", "b"]]]]]])
+        self.assertEqual(get_output("print func(a, b) { a + b; };"), ["<func>"])
+
 if __name__ == "__main__":
     unittest.main()

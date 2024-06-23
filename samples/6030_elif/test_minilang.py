@@ -100,7 +100,7 @@ class TestMinilang(unittest.TestCase):
 
     def test_if(self):
         self.assertEqual(get_ast("if 5 = 5 { print 6; }"), \
-                         ['program', ['if', ['=', 5, 5], ['block', ['print', 6]], ['block']]])
+                         ["program", ["if", ["=", 5, 5], ["block", ["print", 6]], ["block"]]])
         self.assertEqual(get_output("if 5 = 5 { print 6; }"), [6])
         self.assertEqual(get_output("if 5 # 5 { print 6; }"), [])
 
@@ -123,7 +123,7 @@ class TestMinilang(unittest.TestCase):
 
     def test_elif(self):
         self.assertEqual(get_ast("if 5 # 5 { print 5; } elif 5 = 5 { print 6; } else { print 7; }"), \
-                         ['program', ['if', ['#', 5, 5], ['block', ['print', 5]], ['if', ['=', 5, 5], ['block', ['print', 6]], ['block', ['print', 7]]]]])
+                         ["program", ["if", ["#", 5, 5], ["block", ["print", 5]], ["if", ["=", 5, 5], ["block", ["print", 6]], ["block", ["print", 7]]]]])
         self.assertEqual(get_output("if 5 # 5 { print 5; } elif 5 = 5 { print 6; } else { print 7; }"), [6])
 
         self.assertEqual(get_output("if true { print 5; } elif true { print 6; } elif true { print 7; } else { print 8; }"), [5])
